@@ -32,6 +32,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      pages_enabled: ${{ steps.pages.outputs.enabled }}
     steps:
       - uses: actions/checkout@v4
 
@@ -66,21 +68,11 @@ jobs:
       - name: Отключить Jekyll
         run: touch out/.nojekyll
 
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: out
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       # Pages включается галочкой в настройках репозитория, из кода этого не сделать.
-      # Пока галочка не стоит, выкладка невозможна — но это настройка, а не поломка,
-      # и красить из-за неё пул-реквест в красное неправильно: тогда красный цвет
-      # перестанет значить «что-то сломано».
+      # Проверять это надо здесь, а не в задаче выкладки: та объявляет окружение
+      # github-pages, а оно появляется только вместе с включённым Pages — поэтому
+      # задача выкладки падает ещё до первого шага, и никакая проверка внутри неё
+      # выполниться не успеет.
       - name: Включён ли Pages
         id: pages
         env:
@@ -94,23 +86,33 @@ jobs:
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Демо собрано, но не выложено::GitHub Pages ещё не включён"
+            {
+              echo "## Демо собрано, но выложить его некуда"
+              echo
+              echo "Сборка прошла, все проверки зелёные — демо готово, но GitHub Pages"
+              echo "в репозитории пока не включён, и выкладывать некуда."
+              echo
+              echo "**Что сделать один раз:** Settings → Pages → Source → GitHub Actions."
+              echo
+              echo "После этого: вкладка Actions → «Демо на GitHub Pages» → Re-run jobs."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Что сделать, чтобы демо заработало
-        if: steps.pages.outputs.enabled != 'true'
-        run: |
-          echo "::warning title=Демо собрано, но не выложено::GitHub Pages ещё не включён"
-          {
-            echo "## Демо собрано, но выложить его некуда"
-            echo
-            echo "Сборка прошла, все проверки зелёные — демо готово, но GitHub Pages"
-            echo "в репозитории пока не включён, и выкладывать некуда."
-            echo
-            echo "**Что сделать один раз:** Settings → Pages → Source → GitHub Actions."
-            echo
-            echo "После этого запустить заново: вкладка Actions → «Демо на GitHub Pages» → Re-run jobs."
-          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
 
+  deploy:
+    needs: build
+    # Пропускаем целиком, пока Pages не включён: объявленное ниже окружение
+    # до этого момента не существует, и задача упала бы, не начав работу.
+    # Пропущенная задача не красит пул-реквест в красное, упавшая — красит.
+    if: needs.build.outputs.pages_enabled == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
-        if: steps.pages.outputs.enabled == 'true'
         uses: actions/deploy-pages@v4
