@@ -1,0 +1,297 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+    .t { font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
+         -webkit-font-smoothing: antialiased; letter-spacing: -0.006em; }
+    .num { font-variant-numeric: tabular-nums; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+    .theme-light {
+      --bg:#eef2f7; --surface:#ffffff; --surface-2:#f7f9fc; --surface-3:#e9eef5;
+      --border:#dee5ee; --border-strong:#c2cddc;
+      --text-1:#0e1726; --text-2:#4b5a70; --text-3:#64748b;
+      --accent:#3a4fe0; --accent-hover:#2c3fc4; --accent-tint:#e9ecfd; --on-accent:#ffffff;
+      --ok:#0f7a4a; --ok-tint:#e4f4ec; --warn:#9a5a00; --warn-tint:#fbf0dc;
+      --err:#bf2626; --err-tint:#fbeaea; --neutral:#5b6b82; --neutral-tint:#e9eef4;
+      --shadow: 0 1px 2px rgba(14,23,38,.07), 0 1px 1px rgba(14,23,38,.04);
+      --shadow-lg: 0 10px 30px rgba(14,23,38,.10);
+      --skeleton:#e4eaf2;
+    }
+    .theme-dark {
+      --bg:#080d17; --surface:#111a2b; --surface-2:#0d1524; --surface-3:#18233a;
+      --border:#22304a; --border-strong:#35446200;
+      --border-strong:#354462;
+      --text-1:#e9eff9; --text-2:#9dabc2; --text-3:#7b8ba5;
+      --accent:#7286f7; --accent-hover:#93a3fa; --accent-tint:#1a2450; --on-accent:#0a1024;
+      --ok:#3ecf8e; --ok-tint:#0e2a20; --warn:#e0a33c; --warn-tint:#2c2110;
+      --err:#f3706f; --err-tint:#2e1517; --neutral:#93a1b8; --neutral-tint:#1a2437;
+      --shadow: 0 1px 2px rgba(0,0,0,.45); --shadow-lg: 0 12px 34px rgba(0,0,0,.55);
+      --skeleton:#1b2637;
+    }
+    .row-hit { min-height: 44px; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+</helmet>
+<div class="t {{theme}}" style="width:1440px;min-height:1980px;background:var(--bg);color:var(--text-1);
+  padding:36px 40px 44px;display:flex;flex-direction:column;gap:26px">
+  <div>
+    <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">Токены, а не значения</h1>
+    <p style="margin:7px 0 0;font-size:14px;color:var(--text-2);max-width:74ch;line-height:1.55">Стартовая палитра по разделу 7.2 CLAUDE.md: рабочая, рассчитана на замену, когда появится брендинг. Пока цвета и размеры живут в токенах, смена темы и брендинга занимает час, а не неделю.</p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:32px">
+  <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:8px;background:var(--surface);
+    border:1px solid var(--border);font-size:12px;color:var(--text-2);width:fit-content">
+    <span style="display:flex;color:var(--accent)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.2l8.6 15.3H3.4z"/><path d="M12 10v4.2"/><circle cx="12" cy="17.2" r=".95" fill="currentColor" stroke="none"/></svg></span>
+    В каждой паре плашек левая половина — светлая тема, правая — тёмная. Оба значения заданы сразу,
+    ни один цвет не живёт только внутри тёмной.
+  </div>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Нейтраль</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch">Холодный графит, не чистый серый: фон, поверхности, границы и три уровня текста. Текст третьего уровня доведён до контраста 4,76:1 — ниже 4,5 опускаться нельзя (§7.6).</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7, minmax(0,1fr));gap:14px"><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#eef2f7"></span><span style="flex:1;background:#080d17"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Фон страницы</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--bg</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#eef2f7 · #080d17</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#ffffff"></span><span style="flex:1;background:#111a2b"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Поверхность</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--surface</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#ffffff · #111a2b</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#f7f9fc"></span><span style="flex:1;background:#0d1524"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Поверхность 2</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--surface-2</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#f7f9fc · #0d1524</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#dee5ee"></span><span style="flex:1;background:#22304a"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Граница</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--border</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#dee5ee · #22304a</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#0e1726"></span><span style="flex:1;background:#e9eff9"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Текст 1</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--text-1</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#0e1726 · #e9eff9</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#4b5a70"></span><span style="flex:1;background:#9dabc2"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Текст 2</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--text-2</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#4b5a70 · #9dabc2</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:40px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#64748b"></span><span style="flex:1;background:#7b8ba5"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Текст 3</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--text-3</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#64748b · #7b8ba5</div>
+      </div>
+    </div></div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Акцент — ровно один</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch">Кнопки, ссылки, активные состояния, выделение в таблицах. Не палитра из пяти. Белый текст на акценте даёт 6,2:1.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:14px;max-width:640px"><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#3a4fe0"></span><span style="flex:1;background:#7286f7"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Акцент</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--accent</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#3a4fe0 · #7286f7</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#2c3fc4"></span><span style="flex:1;background:#93a3fa"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Акцент, наведение</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--accent-hover</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#2c3fc4 · #93a3fa</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#e9ecfd"></span><span style="flex:1;background:#1a2450"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Акцент, подложка</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--accent-tint</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#e9ecfd · #1a2450</div>
+      </div>
+    </div></div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Статусы — отдельно от акцента</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch">Статусный цвет никогда не используется как акцент, и наоборот. Каждый статус — это цвет И текст, иначе он не читается в чёрно-белой печати и при дальтонизме.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:14px;max-width:840px"><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#0f7a4a"></span><span style="flex:1;background:#3ecf8e"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Успех</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--ok</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#0f7a4a · #3ecf8e</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#9a5a00"></span><span style="flex:1;background:#e0a33c"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Внимание</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--warn</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#9a5a00 · #e0a33c</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#bf2626"></span><span style="flex:1;background:#f3706f"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Ошибка</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--err</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#bf2626 · #f3706f</div>
+      </div>
+    </div><div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+        <span style="flex:1;background:#5b6b82"></span><span style="flex:1;background:#93a1b8"></span>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700">Нейтральный</div>
+        <div style="font-size:11px;color:var(--text-3);font-family:ui-monospace,'SF Mono',Menlo,monospace">--neutral</div>
+        <div class="num" style="font-size:11px;color:var(--text-3);margin-top:2px">#5b6b82 · #93a1b8</div>
+      </div>
+    </div></div><div style="margin-top:18px"><div style="display:flex;flex-wrap:wrap;gap:10px"><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--ok-tint);color:var(--ok);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none"></span>Оплачен, деньги удержаны</span><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--warn-tint);color:var(--warn);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--warn);flex:none"></span>Ждёт вашей приёмки</span><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--err-tint);color:var(--err);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--err);flex:none"></span>Рекламация</span><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--neutral);flex:none"></span>Черновик</span><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--ok-tint);color:var(--ok);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none"></span>Опубликовано</span><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--warn-tint);color:var(--warn);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--warn);flex:none"></span>На модерации</span><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--err-tint);color:var(--err);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--err);flex:none"></span>Отклонено</span></div></div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Типографическая шкала</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch">Одна на весь проект, размеры только из неё. Manrope с запасом на системный шрифт. Текстовые блоки не шире ~70 символов.</p>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">34px</span>
+    <span style="font-size:34px;font-weight:800;line-height:1.25;letter-spacing:-.03em">Маркетплейс</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">редко, крупные суммы</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">26px</span>
+    <span style="font-size:26px;font-weight:800;line-height:1.25;letter-spacing:-.02em">Заголовок страницы</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">h1</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">20px</span>
+    <span style="font-size:20px;font-weight:700;line-height:1.25;letter-spacing:-.01em">Заголовок раздела</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">h2</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">16px</span>
+    <span style="font-size:16px;font-weight:700;line-height:1.25;letter-spacing:0">Название карточки</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">h3</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">14px</span>
+    <span style="font-size:14px;font-weight:500;line-height:1.25;letter-spacing:0">Основной текст интерфейса</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">body</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">13px</span>
+    <span style="font-size:13px;font-weight:500;line-height:1.25;letter-spacing:0">Текст в таблицах и подписи</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">table</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">12px</span>
+    <span style="font-size:12px;font-weight:500;line-height:1.25;letter-spacing:0">Пояснение под полем</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">caption</span>
+  </div><div style="display:flex;align-items:baseline;gap:20px;padding:11px 0;border-top:1px solid var(--border)">
+    <span class="num" style="flex:none;width:120px;font-size:11px;color:var(--text-3)">11px</span>
+    <span style="font-size:11px;font-weight:700;line-height:1.25;letter-spacing:.09em">НАДЗАГОЛОВОК РАЗДЕЛА</span>
+    <span style="margin-left:auto;flex:none;font-size:11px;color:var(--text-3)">label</span>
+  </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Кнопки</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch"></p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center"><button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Главное действие</button><button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Второстепенное</button><button style="background:var(--surface-3);color:var(--text-1);border:1px solid transparent;height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Тихое</button><button style="background:transparent;color:var(--err);border:1px solid var(--err);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Опасное</button></div>
+  <div style="font-size:12px;color:var(--text-3);line-height:1.5;margin-top:12px;max-width:60ch">
+    Главное действие на экране ровно одно и визуально сильнее остальных. Зелёная кнопка «Сохранить» —
+    ошибка: зелёный означает «успешно», а не «нажми сюда». Высота 44&nbsp;px — минимальная целевая область.
+  </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Таблицы</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch"></p>
+    </div>
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface)">
+    <table style="width:100%;min-width:520px;border-collapse:collapse"><tr><th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">Заказ</th><th style="text-align:left;padding:11px 14px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">Статус</th><th class="num" style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">Сумма</th><th class="num" style="text-align:right;padding:11px 14px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)">Дата</th></tr><tr><td style="text-align:left;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">№ 1240 Дезинсекция</td><td style="text-align:left;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)"><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--warn-tint);color:var(--warn);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--warn);flex:none"></span>Ждёт приёмки</span></td><td class="num" style="text-align:right;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">5 400 ₽</td><td class="num" style="text-align:right;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">27.08.2026</td></tr><tr><td style="text-align:left;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">№ 1197 Генуборка</td><td style="text-align:left;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)"><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--ok-tint);color:var(--ok);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none"></span>Завершён</span></td><td class="num" style="text-align:right;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">14 280 ₽</td><td class="num" style="text-align:right;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">11.08.2026</td></tr><tr><td style="text-align:left;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">№ 1164 СОУТ</td><td style="text-align:left;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)"><span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--err-tint);color:var(--err);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap"><span style="width:7px;height:7px;border-radius:50%;background:var(--err);flex:none"></span>Рекламация</span></td><td class="num" style="text-align:right;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">9 800 ₽</td><td class="num" style="text-align:right;padding:11px 14px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border)">02.08.2026</td></tr></table>
+  </div>
+  <div style="font-size:12px;color:var(--text-3);line-height:1.5;margin-top:12px;max-width:60ch">
+    Цифры в колонках — табличные (<code>tabular-nums</code>), иначе суммы не сравниваются взглядом.
+    Суммы и даты выровнены вправо одинаково во всех таблицах системы.
+  </div>
+  </section>
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <div>
+      <h2 style="margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em">Геометрия</h2>
+      <p style="margin:6px 0 0;font-size:13px;color:var(--text-2);line-height:1.55;max-width:76ch">Радиусы и шаг отступов. Значений «по месту» в компонентах быть не должно — только токены.</p>
+    </div>
+    <div style="display:flex;gap:26px;flex-wrap:wrap">
+    <div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">Радиусы</div>
+      <div style="display:flex;gap:10px;align-items:flex-end"><div style="text-align:center"><div style="width:56px;height:56px;background:var(--accent-tint);border:1px solid var(--accent);border-radius:6px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">6</div></div><div style="text-align:center"><div style="width:56px;height:56px;background:var(--accent-tint);border:1px solid var(--accent);border-radius:8px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">8</div></div><div style="text-align:center"><div style="width:56px;height:56px;background:var(--accent-tint);border:1px solid var(--accent);border-radius:10px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">10</div></div><div style="text-align:center"><div style="width:56px;height:56px;background:var(--accent-tint);border:1px solid var(--accent);border-radius:12px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">12</div></div></div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:10px">Шаг сетки и отступы</div>
+      <div style="display:flex;gap:10px;align-items:flex-end"><div style="text-align:center"><div style="width:4px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">4</div></div><div style="text-align:center"><div style="width:8px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">8</div></div><div style="text-align:center"><div style="width:12px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">12</div></div><div style="text-align:center"><div style="width:16px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">16</div></div><div style="text-align:center"><div style="width:20px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">20</div></div><div style="text-align:center"><div style="width:24px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">24</div></div><div style="text-align:center"><div style="width:32px;height:44px;background:var(--surface-3);border:1px solid var(--border);border-radius:4px"></div><div class="num" style="font-size:11px;color:var(--text-3);margin-top:6px">32</div></div></div>
+    </div>
+  </div>
+  </section>
+</div>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"dark":{"editor":"boolean","default":false}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.dark ? 'theme-dark' : 'theme-light' };
+  }
+}
+</script>
+</body>
+</html>

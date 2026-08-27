@@ -36,3 +36,6 @@ coverage/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Собранный холст дизайна — генерируется из .dc.html, в репозиторий не нужен
+design/marketplace-client-path.html
