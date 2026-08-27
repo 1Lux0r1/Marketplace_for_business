@@ -70,6 +70,7 @@
 | [`docs/08-server-requirements.md`](docs/08-server-requirements.md) | Что покупать: сервер под 10 одновременных пользователей |
 | [`docs/09-money-holding.md`](docs/09-money-holding.md) | Схемы удержания денег клиента: строим А, Б и В |
 | [`docs/10-commission-rates.md`](docs/10-commission-rates.md) | Ставки комиссии: категорийные, акционные, две лестницы скидок |
+| [`docs/11-electronic-signature.md`](docs/11-electronic-signature.md) | Подписание документов усиленной квалифицированной подписью |
 | [`docs/00-starter-guide.md`](docs/00-starter-guide.md) | Как пользоваться этим пакетом дальше |
 | [`prompts/kickoff.md`](prompts/kickoff.md) | Готовые промпты: старт, очередная задача, ревью перед деплоем |
 
