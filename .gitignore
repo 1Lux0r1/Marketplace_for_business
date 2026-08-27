@@ -9,7 +9,7 @@ node_modules/
 
 # Сборка
 .next/
-out/
+out/          # статическая выгрузка демо, собирается в GitHub Actions
 build/
 dist/
 *.tsbuildinfo

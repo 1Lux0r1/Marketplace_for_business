@@ -1,0 +1,81 @@
+name: Демо на GitHub Pages
+
+# Демо — временная замена боевому серверу: место, куда можно посмотреть
+# и что можно показать, пока VPS не куплен (вопрос 1 в docs/decisions-page.html).
+# Собирается из ветки разработки при каждом изменении интерфейса.
+#
+# ВАЖНО: перед первым запуском включить Pages в настройках репозитория:
+# Settings → Pages → Source: GitHub Actions.
+
+on:
+  push:
+    branches: [claude/marketplace-business-system-nd5b3m, main]
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'next.config.ts'
+      - 'postcss.config.mjs'
+      - '.github/workflows/demo.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Одна выкладка за раз: новая отменяет предыдущую, чтобы демо не отставало
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Зависимости
+        run: pnpm install --frozen-lockfile
+
+      # Демо не выкладывается, если проверки не прошли: сломанное демо
+      # хуже отсутствующего — по нему принимают решения
+      - name: Проверки
+        run: pnpm typecheck && pnpm lint && pnpm test
+
+      - name: Сборка
+        env:
+          DEMO_EXPORT: '1'
+          DEMO_BASE_PATH: /${{ github.event.repository.name }}
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          BUILD_VERSION="$(git describe --tags --always)" \
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+          pnpm demo:build
+
+      # Без этого файла GitHub Pages прячет папку _next, и сайт открывается без стилей
+      - name: Отключить Jekyll
+        run: touch out/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

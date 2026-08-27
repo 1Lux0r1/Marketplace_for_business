@@ -42,6 +42,11 @@
 - Правило ESLint, запрещающее импорт глубже `modules/<name>/index.ts`, с тестами
 - systemd-юниты, скрипт деплоя, ежедневный дамп и проверка восстановления
 
+**Демо** собирается автоматически при каждом изменении интерфейса и выкладывается
+на GitHub Pages — временная замена серверу, пока его нет. Настройка:
+`.github/workflows/demo.yml`; перед первым запуском включить Pages в настройках
+репозитория (Settings → Pages → Source: GitHub Actions).
+
 Не закрыто: деплой на сервер и проверка восстановления из дампа на живой базе —
 нет доступов (Q7 в `docs/06-open-questions.md`).
 
@@ -59,7 +64,11 @@
 | [`docs/03-data-model.md`](docs/03-data-model.md) | DDL схем `platform`, `catalog`, `intake` с пояснениями |
 | [`docs/04-glossary.md`](docs/04-glossary.md) | Язык предметной области: одно понятие — одно слово |
 | [`docs/05-sprint-01.md`](docs/05-sprint-01.md) | Пять задач первого месяца с критериями приёмки |
+| [`docs/05-sprint-02.md`](docs/05-sprint-02.md) | Месяц 2: витрина и саморегистрация подрядчика |
+| [`docs/05-sprint-03.md`](docs/05-sprint-03.md) | Месяц 3: админский интерфейс и приём заявки |
 | [`docs/06-open-questions.md`](docs/06-open-questions.md) | Что ещё не решено и кто это решает |
+| [`docs/08-server-requirements.md`](docs/08-server-requirements.md) | Что покупать: сервер под 10 одновременных пользователей |
+| [`docs/09-money-holding.md`](docs/09-money-holding.md) | Четыре способа удержания денег клиента, с ценой и рекомендацией |
 | [`docs/00-starter-guide.md`](docs/00-starter-guide.md) | Как пользоваться этим пакетом дальше |
 | [`prompts/kickoff.md`](prompts/kickoff.md) | Готовые промпты: старт, очередная задача, ревью перед деплоем |
 

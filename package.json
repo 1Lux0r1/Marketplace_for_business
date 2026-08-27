@@ -16,7 +16,8 @@
     "db:seed": "tsx --env-file-if-exists=.env src/db/seed.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "demo:build": "DEMO_EXPORT=1 next build"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
