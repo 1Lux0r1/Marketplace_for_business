@@ -68,12 +68,16 @@ jobs:
       - name: Отключить Jekyll
         run: touch out/.nojekyll
 
-      # Pages включается галочкой в настройках репозитория, из кода этого не сделать.
-      # Проверять это надо здесь, а не в задаче выкладки: та объявляет окружение
-      # github-pages, а оно появляется только вместе с включённым Pages — поэтому
-      # задача выкладки падает ещё до первого шага, и никакая проверка внутри неё
-      # выполниться не успеет.
-      - name: Включён ли Pages
+      # Выкладка возможна только при двух условиях, и оба проверяются здесь,
+      # а не в задаче выкладки: та объявляет окружение github-pages и падает
+      # ещё до первого шага, если условие не выполнено, — тогда никакая проверка
+      # внутри неё выполниться уже не успеет.
+      #
+      # 1. Pages включён в настройках репозитория (галочкой, из кода нельзя).
+      # 2. Ветка — основная. GitHub по умолчанию запрещает выкладку из рабочих
+      #    веток, и это разумно: демо должно показывать то, что принято, а не
+      #    то, что кто-то сейчас пробует.
+      - name: Можно ли выкладывать
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
@@ -82,21 +86,32 @@ jobs:
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/pages")
-          if [ "$code" = "200" ]; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
+          default_branch="${{ github.event.repository.default_branch }}"
+
+          if [ "$code" != "200" ]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Демо собрано, но не выложено::GitHub Pages ещё не включён"
+            echo "::warning title=Демо собрано, но не выложено::GitHub Pages не включён"
             {
-              echo "## Демо собрано, но выложить его некуда"
+              echo "## Демо собрано, но выкладывать некуда"
               echo
-              echo "Сборка прошла, все проверки зелёные — демо готово, но GitHub Pages"
-              echo "в репозитории пока не включён, и выкладывать некуда."
+              echo "Все проверки прошли, демо готово. Но GitHub Pages в репозитории"
+              echo "не включён."
               echo
               echo "**Что сделать один раз:** Settings → Pages → Source → GitHub Actions."
-              echo
-              echo "После этого: вкладка Actions → «Демо на GitHub Pages» → Re-run jobs."
             } >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$GITHUB_REF" != "refs/heads/$default_branch" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Демо собрано, выложится после слияния"
+              echo
+              echo "Все проверки прошли и демо собралось. Выкладывается оно только"
+              echo "из ветки \`$default_branch\` — так демо показывает принятое,"
+              echo "а не то, что сейчас в работе."
+              echo
+              echo "Как только эта ветка будет влита, демо обновится само."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/upload-pages-artifact@v3
@@ -105,9 +120,9 @@ jobs:
 
   deploy:
     needs: build
-    # Пропускаем целиком, пока Pages не включён: объявленное ниже окружение
-    # до этого момента не существует, и задача упала бы, не начав работу.
-    # Пропущенная задача не красит пул-реквест в красное, упавшая — красит.
+    # Пропускаем целиком, если выкладка невозможна. Пропущенная задача
+    # не красит пул-реквест в красное, а упавшая — красит, и тогда красный
+    # цвет перестаёт значить «что-то сломано».
     if: needs.build.outputs.pages_enabled == 'true'
     runs-on: ubuntu-latest
     environment:
