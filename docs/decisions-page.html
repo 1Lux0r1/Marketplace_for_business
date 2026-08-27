@@ -1,0 +1,1004 @@
+<title>Решения, которые ждут вас</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&display=swap">
+
+<style>
+  /* Палитра проекта из CLAUDE.md §7.2 — та же, что в макетах и в коде */
+  :root {
+    --ground: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f7f8fa;
+    --surface-3: #eff1f4;
+    --line: #e5e7eb;
+    --line-strong: #cbd1d9;
+    --ink: #333b45;
+    --ink-2: #5a6472;
+    --ink-3: #6b7480;
+    --accent: #00a699;
+    --accent-text: #007d74;
+    --accent-tint: #e2f7f5;
+    --on-accent: #1f2933;
+    --promo: #f2820d;
+    --promo-text: #9a5800;
+    --promo-tint: #fdf0dd;
+    --warn-text: #925300;
+    --warn-tint: #fdf0dd;
+    --stop: #d84a2c;
+    --stop-text: #c4381b;
+    --stop-tint: #fceeea;
+    --ok-text: #26692b;
+    --ok-tint: #e7f3e8;
+    --shadow: 0 1px 2px rgb(51 59 69 / 0.06), 0 1px 3px rgb(51 59 69 / 0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #12161c;
+      --surface: #1a1f27;
+      --surface-2: #151a21;
+      --surface-3: #232932;
+      --line: #2c333d;
+      --line-strong: #3d4551;
+      --ink: #edf0f4;
+      --ink-2: #a8b1bd;
+      --ink-3: #8590a0;
+      --accent: #20c4b5;
+      --accent-text: #3fded0;
+      --accent-tint: #0f2f2c;
+      --on-accent: #0e1217;
+      --promo: #ff9a33;
+      --promo-text: #ffb164;
+      --promo-tint: #33230e;
+      --warn-text: #eebb63;
+      --warn-tint: #2f2410;
+      --stop: #ff7a5c;
+      --stop-text: #ff9a83;
+      --stop-tint: #331a14;
+      --ok-text: #7ad486;
+      --ok-tint: #142a17;
+      --shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #12161c;
+    --surface: #1a1f27;
+    --surface-2: #151a21;
+    --surface-3: #232932;
+    --line: #2c333d;
+    --line-strong: #3d4551;
+    --ink: #edf0f4;
+    --ink-2: #a8b1bd;
+    --ink-3: #8590a0;
+    --accent: #20c4b5;
+    --accent-text: #3fded0;
+    --accent-tint: #0f2f2c;
+    --on-accent: #0e1217;
+    --promo: #ff9a33;
+    --promo-text: #ffb164;
+    --promo-tint: #33230e;
+    --warn-text: #eebb63;
+    --warn-tint: #2f2410;
+    --stop: #ff7a5c;
+    --stop-text: #ff9a83;
+    --stop-tint: #331a14;
+    --ok-text: #7ad486;
+    --ok-tint: #142a17;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Literata", Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .ui { font-family: "Manrope", "Segoe UI", system-ui, sans-serif; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .page {
+    max-width: 62rem;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  .prose { max-width: 40rem; }
+
+  /* ── Шапка ───────────────────────────────────────────────── */
+  .masthead { border-bottom: 2px solid var(--ink); padding-bottom: 2rem; }
+
+  .eyebrow {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    margin: 0 0 0.9rem;
+  }
+
+  h1 {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.08;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+  }
+
+  .standfirst {
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+    max-width: 42rem;
+    margin: 0;
+  }
+
+  .masthead-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 2rem;
+    margin-top: 1.75rem;
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.8125rem;
+    color: var(--ink-3);
+  }
+
+  /* ── Разделы ─────────────────────────────────────────────── */
+  section { margin-top: 3.5rem; }
+
+  h2 {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+    text-wrap: balance;
+    margin: 0 0 0.75rem;
+  }
+
+  h3 {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.5rem;
+  }
+
+  p { margin: 0 0 1.1rem; }
+  p:last-child { margin-bottom: 0; }
+
+  .lede { color: var(--ink-2); }
+
+  /* ── Сводка ──────────────────────────────────────────────── */
+  .table-scroll { overflow-x: auto; margin-top: 1.5rem; }
+
+  table {
+    width: 100%;
+    min-width: 40rem;
+    border-collapse: collapse;
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.875rem;
+  }
+
+  th {
+    text-align: left;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 0 0.9rem 0.7rem;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  td {
+    padding: 0.85rem 0.9rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink-2);
+    vertical-align: top;
+  }
+
+  td:first-child, th:first-child { padding-left: 0; }
+  td a { color: var(--accent-text); font-weight: 700; text-decoration: none; }
+  td a:hover { text-decoration: underline; }
+
+  /* ── Метки срочности ─────────────────────────────────────── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .chip::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+
+  .chip-stop { background: var(--stop-tint); color: var(--stop-text); }
+  .chip-soon { background: var(--warn-tint); color: var(--warn-text); }
+  .chip-later { background: var(--surface-3); color: var(--ink-2); }
+  .chip-done { background: var(--ok-tint); color: var(--ok-text); }
+
+  /* ── Карточка решения ────────────────────────────────────── */
+  .decision {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    padding: 1.75rem;
+    margin-top: 1.75rem;
+  }
+
+  .decision-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem 1rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.4rem;
+  }
+
+  .decision-id {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+  }
+
+  .decision-title {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-wrap: balance;
+    margin: 0;
+    flex: 1 1 20rem;
+  }
+
+  .block {
+    margin-top: 1.4rem;
+  }
+
+  .block-label {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 0.55rem;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .option {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr;
+    gap: 0 0.85rem;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+  }
+
+  .option-pick {
+    background: var(--accent-tint);
+    border-color: var(--accent);
+  }
+
+  .option-letter {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+
+  .option-pick .option-letter { color: var(--accent-text); }
+
+  .option-name {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--ink);
+    margin: 0 0 0.35rem;
+  }
+
+  .option-body { font-size: 0.9375rem; line-height: 1.6; color: var(--ink-2); margin: 0; }
+  .option-cost {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--ink-3);
+    margin: 0.45rem 0 0;
+  }
+
+  .verdict {
+    display: flex;
+    gap: 0.9rem;
+    padding: 1.1rem 1.2rem;
+    border-radius: 10px;
+    background: var(--accent-tint);
+    border: 1px solid var(--accent);
+    margin-top: 1.4rem;
+  }
+
+  .verdict-mark {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+    flex: none;
+    padding-top: 0.2rem;
+    width: 7.5rem;
+  }
+
+  .verdict p { font-size: 0.9375rem; line-height: 1.6; margin: 0; }
+
+  .danger {
+    display: flex;
+    gap: 0.9rem;
+    padding: 1.1rem 1.2rem;
+    border-radius: 10px;
+    background: var(--stop-tint);
+    border: 1px solid var(--stop);
+    margin-top: 1rem;
+  }
+
+  .danger-mark {
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--stop-text);
+    flex: none;
+    padding-top: 0.2rem;
+    width: 7.5rem;
+  }
+
+  .danger p { font-size: 0.9375rem; line-height: 1.6; margin: 0; }
+
+  ul.plain {
+    margin: 0;
+    padding-left: 1.2rem;
+  }
+
+  ul.plain li { margin-bottom: 0.5rem; }
+  ul.plain li:last-child { margin-bottom: 0; }
+
+  .done-list {
+    display: grid;
+    gap: 0.9rem;
+    margin-top: 1.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .done-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 0.85rem;
+    align-items: start;
+    padding-bottom: 0.9rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .done-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .done-item .chip { margin-top: 0.15rem; }
+
+  .done-text { font-size: 0.9375rem; line-height: 1.6; color: var(--ink-2); }
+  .done-text strong { color: var(--ink); font-weight: 600; }
+
+  .footnote {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-family: "Manrope", system-ui, sans-serif;
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    color: var(--ink-3);
+    max-width: 44rem;
+  }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 0.875em;
+    background: var(--surface-3);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+
+  a:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  @media (max-width: 40rem) {
+    .page { padding: 2rem 1.1rem 4rem; }
+    .decision { padding: 1.25rem; }
+    .verdict, .danger { flex-direction: column; gap: 0.5rem; }
+    .verdict-mark, .danger-mark { width: auto; padding-top: 0; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <p class="eyebrow">Маркетплейс для бизнеса · состояние на 27 августа</p>
+    <h1>Решения, которые ждут вас</h1>
+    <p class="standfirst">
+      Шесть вопросов, которые я не могу закрыть за вас, потому что они про деньги,
+      юрлицо и закупки, а не про код. Два из них уже тормозят работу прямо сейчас.
+      По каждому написано: что решаем, чем варианты отличаются по деньгам и срокам,
+      что сломается при неверном выборе и что я советую.
+    </p>
+    <div class="masthead-meta ui">
+      <span>Каркас системы готов, проверки проходят</span>
+      <span>Следующая задача — вход пользователей</span>
+      <span>До пилота по плану 7 месяцев</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>Коротко: что где стоит</h2>
+    <p class="prose lede">
+      Порядок в таблице — по срочности, а не по важности. Первые два вопроса упираются
+      в работу, которую я делаю на этой неделе; последние два можно отложить на месяц
+      без последствий.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Вопрос</th>
+            <th>Когда нужен ответ</th>
+            <th>Что будет, если тянуть</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="#access">Сервер, домен, почта, хранилище</a></td>
+            <td><span class="chip chip-stop">Тормозит сейчас</span></td>
+            <td>Система написана, но её никому нельзя показать</td>
+          </tr>
+          <tr>
+            <td><a href="#staff">Как в системе устроены ваши сотрудники</a></td>
+            <td><span class="chip chip-stop">Тормозит сейчас</span></td>
+            <td>Переделка вырастет с одного часа до дня и риска потерять данные</td>
+          </tr>
+          <tr>
+            <td><a href="#inn">Чем проверять подрядчиков при регистрации</a></td>
+            <td><span class="chip chip-soon">К концу сентября</span></td>
+            <td>Каталог наполнять будет некому: оператор не потянет</td>
+          </tr>
+          <tr>
+            <td><a href="#money">Как технически удерживаются деньги клиента</a></td>
+            <td><span class="chip chip-soon">К концу ноября</span></td>
+            <td>Самая дорогая переделка в проекте — задевает выданные документы</td>
+          </tr>
+          <tr>
+            <td><a href="#name">Название продукта и домен</a></td>
+            <td><span class="chip chip-later">Можно позже, но дешевле сейчас</span></td>
+            <td>Из замены одной строки превратится в отдельную задачу</td>
+          </tr>
+          <tr>
+            <td><a href="#look">Оттенок оранжевого и шрифт</a></td>
+            <td><span class="chip chip-later">Не тормозит</span></td>
+            <td>Ничего. Меняется в любой момент за минуты</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="access">
+    <div class="decision">
+      <div class="decision-head">
+        <span class="decision-id ui">Вопрос 1</span>
+        <h3 class="decision-title">Сервер, домен, почта и хранилище файлов</h3>
+        <span class="chip chip-stop">Тормозит сейчас</span>
+      </div>
+
+      <p class="block-label">Что решаем</p>
+      <p>
+        Программа написана и работает у меня. Чтобы её увидели вы, ваши первые
+        подрядчики и инвестор, ей нужно место, где она живёт круглосуточно: арендованный
+        сервер, адрес в интернете, сервис для отправки писем и место для хранения
+        файлов договоров и актов.
+      </p>
+
+      <p class="block-label">Почему это не могу сделать я</p>
+      <p>
+        Это покупки на юрлицо: договор аренды, оплата, доступы. Я не могу оформить
+        их от вашего имени и не могу выбрать поставщика за вас, потому что тут
+        важна не техника, а цена, поддержка и надёжность на несколько лет вперёд.
+      </p>
+
+      <p class="block-label">Что именно нужно купить</p>
+      <ul class="plain">
+        <li>
+          <strong>Сервер в России.</strong> Обязательно в России: закон 152-ФЗ требует,
+          чтобы имена, телефоны и адреса россиян хранились на серверах внутри страны.
+          Это проверяют при технической проверке перед инвестраундом, и зарубежный
+          сервер — это не «мелочь, поправим потом», а причина не пройти проверку.
+        </li>
+        <li>
+          <strong>Домен</strong> — адрес, по которому открывается сайт. Самая дешёвая
+          и самая быстрая позиция в списке.
+        </li>
+        <li>
+          <strong>Российский сервис отправки писем.</strong> Вход в систему будет по
+          ссылке из письма, без паролей. Зарубежный почтовый сервис нарушает то же
+          требование 152-ФЗ, что и зарубежный сервер: письма содержат имя и адрес.
+        </li>
+        <li>
+          <strong>Хранилище файлов в России.</strong> Там будут лежать договоры, счета
+          и акты, а также ежедневные резервные копии базы.
+        </li>
+      </ul>
+
+      <div class="danger">
+        <span class="danger-mark">Чем рискуем</span>
+        <p>
+          Пока этого нет, я пишу код, который никто не проверяет в бою. Ошибки,
+          которые всплывают только на живом сервере, накапливаются молча
+          и обнаружатся все сразу. Резервное копирование я тоже написал, но не смог
+          проверить: <strong>копия, из которой ни разу не восстанавливались, —
+          это не резервная копия, а надежда.</strong>
+        </p>
+      </div>
+
+      <div class="verdict">
+        <span class="verdict-mark">Что советую</span>
+        <p>
+          Взять самый простой российский сервер и домен на этой неделе, не выбирая
+          долго. Переехать на другого поставщика позже — несколько часов работы.
+          Продолжать без сервера ещё месяц — накопить месяц непроверенного кода.
+          Почту и хранилище можно докупить в сентябре, они нужны чуть позже.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="staff">
+    <div class="decision">
+      <div class="decision-head">
+        <span class="decision-id ui">Вопрос 2</span>
+        <h3 class="decision-title">Как в системе устроены ваши собственные сотрудники</h3>
+        <span class="chip chip-stop">Тормозит сейчас</span>
+      </div>
+
+      <p class="block-label">Что решаем</p>
+      <p>
+        В системе каждый человек привязан к компании: Анна — к своей кофейне,
+        мастер — к своему ИП. А ваш оператор, который разбирает споры и модерирует
+        карточки, — сотрудник самой площадки, и компании у него в системе нет.
+        Сейчас программа устроена так, что человек без компании существовать не может.
+        Первого же оператора будет некуда посадить.
+      </p>
+
+      <p class="block-label">Почему это не могу решить я</p>
+      <p>
+        Потому что за этим стоит вопрос про вашу компанию, а не про программу.
+        Площадка — сторона сделки: она от своего имени выпускает договор, счёт и акт.
+        Значит у неё есть название, ИНН и адрес, и они должны где-то храниться.
+        Вопрос в том, считаем ли мы площадку такой же компанией в системе, как кофейню
+        и подрядчика, — или делаем для неё что-то отдельное.
+      </p>
+
+      <p class="block-label">Варианты</p>
+      <ul class="options">
+        <li class="option option-pick">
+          <span class="option-letter ui">А</span>
+          <div>
+            <p class="option-name">Завести площадку как компанию особого вида</p>
+            <p class="option-body">
+              У площадки появляется своя карточка компании в системе, ваши сотрудники —
+              её работники. Реквизиты для договоров берутся оттуда же, а не хранятся
+              отдельно. Правило «у каждого человека есть компания» остаётся честным.
+            </p>
+            <p class="option-cost ui">Около часа работы</p>
+          </div>
+        </li>
+        <li class="option">
+          <span class="option-letter ui">Б</span>
+          <div>
+            <p class="option-name">Разрешить сотрудникам жить без компании</p>
+            <p class="option-body">
+              Быстро, но правило «у каждого человека есть компания» перестаёт
+              выполняться. Дальше в каждом новом куске системы придётся отдельно
+              помнить, что бывает человек без компании, и проверять это руками.
+              Такие мелкие проверки забываются, и через полгода это отдельный
+              источник ошибок.
+            </p>
+            <p class="option-cost ui">Около часа сейчас, потом постоянные мелкие проверки</p>
+          </div>
+        </li>
+        <li class="option">
+          <span class="option-letter ui">В</span>
+          <div>
+            <p class="option-name">Сделать сотрудников площадки отдельной сущностью</p>
+            <p class="option-body">
+              Полностью отдельный список сотрудников со своим входом и своими правами.
+              Формально чище всего, но получается две параллельные системы входа,
+              которые придётся поддерживать вдвойне — и вдвойне же проверять на
+              безопасность.
+            </p>
+            <p class="option-cost ui">6–8 часов сейчас и двойная работа дальше</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="verdict">
+        <span class="verdict-mark">Что советую</span>
+        <p>
+          Вариант <strong>А</strong>. Реквизиты площадки нам всё равно понадобятся —
+          без них нельзя выпустить ни один договор и ни один счёт. Значит карточку
+          компании площадки мы заведём в любом случае, вопрос только в том, сделаем
+          мы это сейчас за час или потом в спешке.
+        </p>
+      </div>
+
+      <div class="danger">
+        <span class="danger-mark">Чем рискуем</span>
+        <p>
+          Это решение о том, как устроено хранение данных. Пока в системе нет живых
+          клиентов, переделка стоит час. После запуска пилота придётся переносить
+          данные реальных компаний из одной структуры в другую: <strong>это уже
+          8–12 часов и реальный шанс что-то потерять.</strong> Поэтому ответ нужен
+          до того, как я начну следующую задачу — вход пользователей в систему.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="inn">
+    <div class="decision">
+      <div class="decision-head">
+        <span class="decision-id ui">Вопрос 3</span>
+        <h3 class="decision-title">Чем проверять подрядчиков при саморегистрации</h3>
+        <span class="chip chip-soon">К концу сентября</span>
+      </div>
+
+      <p class="block-label">Что решаем</p>
+      <p>
+        Вы решили, что подрядчики регистрируются на площадке сами, а их карточки
+        услуг проходят модерацию. Это правильно для наполнения каталога, но создаёт
+        новую задачу: как убедиться, что компания с указанным ИНН действительно
+        существует, действует и не находится в стадии ликвидации. Оператор глазами
+        это проверять не должен — иначе мы вернулись к ручному заведению, от которого
+        как раз уходим.
+      </p>
+
+      <p class="block-label">Почему это не могу решить я</p>
+      <p>
+        Потому что один из вариантов — платный, а это ваша строка расходов, и решать
+        про неё вам. Плюс поставщика надо проверить на то, где он хранит данные:
+        то же требование 152-ФЗ, что и в первом вопросе.
+      </p>
+
+      <p class="block-label">Варианты</p>
+      <ul class="options">
+        <li class="option">
+          <span class="option-letter ui">А</span>
+          <div>
+            <p class="option-name">Открытые данные налоговой</p>
+            <p class="option-body">
+              Бесплатно и из первоисточника. Но налоговая отдаёт их большими файлами
+              без удобного способа спросить про одну компанию, так что разбирать их
+              придётся самим и потом поддерживать этот разбор.
+            </p>
+            <p class="option-cost ui">10–14 часов работы, дальше бесплатно</p>
+          </div>
+        </li>
+        <li class="option option-pick">
+          <span class="option-letter ui">Б</span>
+          <div>
+            <p class="option-name">Платный справочник компаний</p>
+            <p class="option-body">
+              Спрашиваем по ИНН — получаем название, статус и вид деятельности за
+              секунду. Подключение занимает несколько часов. Платим помесячно или
+              за количество запросов, точную сумму скажет поставщик.
+            </p>
+            <p class="option-cost ui">4–6 часов работы плюс абонентская плата</p>
+          </div>
+        </li>
+        <li class="option">
+          <span class="option-letter ui">В</span>
+          <div>
+            <p class="option-name">Оператор проверяет руками</p>
+            <p class="option-body">
+              Ничего не стоит и ничего не требует. Работает, пока подрядчиков десяток.
+              На двухстах упрётся в потолок: это и есть тот ручной труд, из-за которого
+              каталог перестанет расти.
+            </p>
+            <p class="option-cost ui">0 часов сейчас, потолок примерно на 30 подрядчиках</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="verdict">
+        <span class="verdict-mark">Что советую</span>
+        <p>
+          Вариант <strong>Б</strong>, но с вариантом <strong>В</strong> как запасным:
+          справочник ответил — регистрация проходит сама; справочник молчит или
+          отвечает неуверенно — заявка падает в очередь к оператору. Так внешний
+          сервис не сможет остановить регистрацию, даже если у него авария.
+          От вас нужно назвать поставщика — сам я его подставлять не буду.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="money">
+    <div class="decision">
+      <div class="decision-head">
+        <span class="decision-id ui">Вопрос 4</span>
+        <h3 class="decision-title">Каким способом деньги клиента лежат у площадки</h3>
+        <span class="chip chip-soon">К концу ноября</span>
+      </div>
+
+      <p class="block-label">Что решаем</p>
+      <p>
+        Вы решили, что гарант работает удержанием: деньги клиента приходят площадке
+        и лежат, пока клиент не подпишет акт. Это главное обещание продукта.
+        Осталось выбрать, каким банковским механизмом это делается — способов
+        три, и у каждого свои ограничения.
+      </p>
+
+      <p class="block-label">Почему это не могу решить я</p>
+      <p>
+        Здесь два собеседника, и ни один из них не я: платёжный сервис говорит,
+        какие механизмы он вообще умеет, а бухгалтер — какой из них корректно
+        оформляется у вас. Я могу написать код под любой из трёх, но выбрать
+        не могу и гадать не буду.
+      </p>
+
+      <p class="block-label">Варианты, о которых стоит спросить платёжный сервис</p>
+      <ul class="options">
+        <li class="option">
+          <span class="option-letter ui">А</span>
+          <div>
+            <p class="option-name">Заморозка суммы на карте клиента</p>
+            <p class="option-body">
+              Деньги блокируются на карте и списываются, когда работа принята.
+              Просто и понятно клиенту. Главное, что надо уточнить у сервиса, —
+              <strong>предельный срок заморозки:</strong> он ограничен, а работы
+              вроде СОУТ идут неделями. Если срок короче срока работ, механизм
+              не подходит.
+            </p>
+          </div>
+        </li>
+        <li class="option">
+          <span class="option-letter ui">Б</span>
+          <div>
+            <p class="option-name">Специальный счёт для чужих денег</p>
+            <p class="option-body">
+              Деньги реально приходят на счёт площадки, но учитываются как чужие
+              и лежат до приёмки. Ближе всего к тому, что клиент понимает под
+              «безопасной сделкой», и не имеет ограничения по сроку. Требует
+              отдельной договорённости с банком.
+            </p>
+          </div>
+        </li>
+        <li class="option">
+          <span class="option-letter ui">В</span>
+          <div>
+            <p class="option-name">Разделение платежа с отложенной выплатой</p>
+            <p class="option-body">
+              Платёжный сервис сразу знает, какая часть суммы ваша, а какая
+              подрядчика, и держит долю подрядчика у себя до вашей команды.
+              Обычно требует договора, по которому вы выступаете посредником
+              между клиентом и подрядчиком.
+            </p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="danger">
+        <span class="danger-mark">Чем рискуем</span>
+        <p>
+          Это самая дорогая переделка в проекте. Механизм удержания определяет,
+          чей ИНН стоит в счёте клиенту, один это документ или два и что подписывает
+          подрядчик при подключении. Менять его <strong>после того, как выпущены
+          первые счета,</strong> — значит трогать уже выданные документы и их сквозную
+          нумерацию, а нумерация счетов не должна иметь пропусков и дублей.
+          Поэтому спросить лучше в сентябре, даже если делать будем в ноябре.
+        </p>
+      </div>
+
+      <div class="verdict">
+        <span class="verdict-mark">Что советую</span>
+        <p>
+          Задать платёжному сервису ровно один вопрос: «какими способами мы можем
+          придержать деньги плательщика до подтверждения выполнения работ и какой
+          у каждого способа предельный срок». Ответ и определит вариант. До ответа
+          я пишу расчёты так, чтобы комиссия и выплата считались отдельными
+          величинами, — тогда смена механизма поменяет проводки, а не всю структуру.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="name">
+    <div class="decision">
+      <div class="decision-head">
+        <span class="decision-id ui">Вопрос 5</span>
+        <h3 class="decision-title">Название продукта и домен</h3>
+        <span class="chip chip-later">Дешевле решить сейчас</span>
+      </div>
+
+      <p class="block-label">Что решаем</p>
+      <p>
+        Сейчас продукт везде называется рабочим именем, взятым из названия
+        репозитория. Название встречается в письмах клиентам, в адресе сайта,
+        в имени базы и в настройках сервера.
+      </p>
+
+      <p class="block-label">Почему спрашиваю сейчас</p>
+      <p>
+        Пока система не запущена, смена названия — это одна автозамена по всем файлам,
+        пять минут. После запуска придётся менять адрес сайта, переоформлять почту,
+        переименовывать базу и предупреждать пользователей. Из пяти минут получается
+        отдельная задача на день с риском что-то забыть.
+      </p>
+
+      <div class="verdict">
+        <span class="verdict-mark">Что советую</span>
+        <p>
+          Назвать рабочее имя и купить домен даже без готового бренда. Логотип
+          и фирменные цвета можно поменять позже за час — цвета в системе заданы
+          в одном месте специально ради этого. А вот адрес сайта менять дорого
+          в любой момент после запуска.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="look">
+    <div class="decision">
+      <div class="decision-head">
+        <span class="decision-id ui">Вопрос 6</span>
+        <h3 class="decision-title">Оттенок оранжевого и шрифт</h3>
+        <span class="chip chip-later">Не тормозит</span>
+      </div>
+
+      <p class="block-label">Что решаем</p>
+      <p>
+        Вы назвали цвета: графитовый, бирюзовый, белый фон, серый для разделителей
+        и тёмно-оранжевый для ошибок. Оранжевый «для выгодных предложений и тарифов»
+        вы упомянули, но точный оттенок не назвали, и я подставил свой — намеренно
+        желтее и светлее, чем оранжевый ошибок, чтобы на экране сделки выгода
+        и проблема не читались как один и тот же цвет.
+      </p>
+      <p>
+        Шрифт вы не называли вовсе. Я выбрал спокойный современный шрифт с полной
+        поддержкой русского, который не выглядит как учётная программа.
+      </p>
+
+      <p class="block-label">Что от вас нужно</p>
+      <ul class="plain">
+        <li>Посмотреть на макеты и сказать, устраивает ли оттенок оранжевого. Если нет — назвать свой, поменяю в одном месте.</li>
+        <li>Сказать, есть ли предпочтения по шрифту или уже купленная лицензия.</li>
+      </ul>
+
+      <div class="verdict">
+        <span class="verdict-mark">Что советую</span>
+        <p>
+          Не тратить на это время сейчас. Оба параметра меняются в одном файле
+          за считанные минуты в любой момент, хоть за неделю до пилота. Это
+          единственные два вопроса в списке, откладывание которых не стоит ничего.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Что уже решено и закрыто</h2>
+    <p class="prose lede">
+      Чтобы список выше не выглядел бесконечным: вот решения, которые вы уже приняли
+      и к которым мы не возвращаемся.
+    </p>
+
+    <ul class="done-list">
+      <li class="done-item">
+        <span class="chip chip-done">Решено</span>
+        <span class="done-text">
+          <strong>Каталог — основной путь клиента.</strong> Клиент сам смотрит услуги
+          разных компаний и выбирает, как на обычном маркетплейсе. Заявка «опишите
+          задачу» остаётся, но для нестандартных случаев.
+        </span>
+      </li>
+      <li class="done-item">
+        <span class="chip chip-done">Решено</span>
+        <span class="done-text">
+          <strong>Работают оба пути сразу.</strong> И каталог с рекомендациями,
+          и заявка с откликами подрядчиков. Это дороже, чем один путь, примерно
+          на 12 часов, и вы это подтвердили.
+        </span>
+      </li>
+      <li class="done-item">
+        <span class="chip chip-done">Решено</span>
+        <span class="done-text">
+          <strong>Гарант работает удержанием денег.</strong> Не «мы компенсируем
+          из своих», а «деньги лежат у нас до приёмки». Это записано в правила
+          проекта как запрет: любой путь, по которому деньги уходят подрядчику
+          раньше подписанного акта, считается ошибкой и проверяется автоматически.
+        </span>
+      </li>
+      <li class="done-item">
+        <span class="chip chip-done">Решено</span>
+        <span class="done-text">
+          <strong>Подрядчики регистрируются сами</strong>, карточки проходят
+          модерацию у оператора. Плюс примерно 22 часа к смете, зато каталог
+          сможет расти без ручного труда.
+        </span>
+      </li>
+      <li class="done-item">
+        <span class="chip chip-done">Решено</span>
+        <span class="done-text">
+          <strong>Палитра и тон.</strong> Графит и бирюза, белый фон, оранжевый
+          только на выгоде. И главное — система делается для людей, которые
+          работают в компаниях, а не для юрлиц: в шапке имя, а не ИНН.
+        </span>
+      </li>
+      <li class="done-item">
+        <span class="chip chip-done">Решено</span>
+        <span class="done-text">
+          <strong>Меню переехало под поиск</strong> и идёт строкой во всю ширину.
+          Боковая колонка убрана, освободившееся место отдано витрине.
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <p class="footnote">
+    Рабочая версия этого списка со всеми техническими подробностями лежит
+    в репозитории в файле <code>docs/06-open-questions.md</code> — она нужна мне
+    и любому, кто подключится к разработке. Эта страница — тот же список,
+    рассказанный на языке решений, а не кода. Когда вы отвечаете на вопрос,
+    я переношу его в раздел «Решено» с датой и одной строкой обоснования,
+    чтобы через полгода не обсуждать одно и то же заново.
+  </p>
+
+</div>
