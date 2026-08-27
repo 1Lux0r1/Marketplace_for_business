@@ -68,7 +68,8 @@
 | [`docs/05-sprint-03.md`](docs/05-sprint-03.md) | Месяц 3: админский интерфейс и приём заявки |
 | [`docs/06-open-questions.md`](docs/06-open-questions.md) | Что ещё не решено и кто это решает |
 | [`docs/08-server-requirements.md`](docs/08-server-requirements.md) | Что покупать: сервер под 10 одновременных пользователей |
-| [`docs/09-money-holding.md`](docs/09-money-holding.md) | Четыре способа удержания денег клиента, с ценой и рекомендацией |
+| [`docs/09-money-holding.md`](docs/09-money-holding.md) | Схемы удержания денег клиента: строим А, Б и В |
+| [`docs/10-commission-rates.md`](docs/10-commission-rates.md) | Ставки комиссии: категорийные, акционные, индивидуальные |
 | [`docs/00-starter-guide.md`](docs/00-starter-guide.md) | Как пользоваться этим пакетом дальше |
 | [`prompts/kickoff.md`](prompts/kickoff.md) | Готовые промпты: старт, очередная задача, ревью перед деплоем |
 
