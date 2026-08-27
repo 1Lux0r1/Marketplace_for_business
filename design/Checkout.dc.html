@@ -16,29 +16,34 @@
     .t { font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
          -webkit-font-smoothing: antialiased; letter-spacing: -0.006em; }
     .num { font-variant-numeric: tabular-nums; }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { color: var(--accent-hover); }
+    a { color: var(--accent-strong); text-decoration: none; font-weight: 600; }
+    a:hover { color: var(--accent); }
     .theme-light {
-      --bg:#eef2f7; --surface:#ffffff; --surface-2:#f7f9fc; --surface-3:#e9eef5;
-      --border:#dee5ee; --border-strong:#c2cddc;
-      --text-1:#0e1726; --text-2:#4b5a70; --text-3:#64748b;
-      --accent:#3a4fe0; --accent-hover:#2c3fc4; --accent-tint:#e9ecfd; --on-accent:#ffffff;
-      --ok:#0f7a4a; --ok-tint:#e4f4ec; --warn:#9a5a00; --warn-tint:#fbf0dc;
-      --err:#bf2626; --err-tint:#fbeaea; --neutral:#5b6b82; --neutral-tint:#e9eef4;
-      --shadow: 0 1px 2px rgba(14,23,38,.07), 0 1px 1px rgba(14,23,38,.04);
-      --shadow-lg: 0 10px 30px rgba(14,23,38,.10);
-      --skeleton:#e4eaf2;
+      --bg:#ffffff; --surface:#ffffff; --surface-2:#f7f8fa; --surface-3:#eff1f4;
+      --border:#e5e7eb; --border-strong:#cbd1d9;
+      --text-1:#333b45; --text-2:#5a6472; --text-3:#6b7480; --ink:#1f2933;
+      --accent:#00a699; --accent-strong:#007d74; --accent-hover:#00c2b2; --accent-tint:#e2f7f5; --on-accent:#1f2933;
+      --promo:#f2820d; --promo-strong:#9a5800; --promo-tint:#fdf0dd; --on-promo:#1f2933;
+      --ok:#2e7d32; --ok-strong:#26692b; --ok-tint:#e7f3e8;
+      --warn:#a85f00; --warn-strong:#925300; --warn-tint:#fdf0dd;
+      --err:#d84a2c; --err-strong:#c4381b; --err-tint:#fceeea;
+      --neutral:#5a6472; --neutral-strong:#4a5361; --neutral-tint:#eff1f4;
+      --shadow: 0 1px 2px rgba(51,59,69,.06), 0 1px 3px rgba(51,59,69,.05);
+      --shadow-lg: 0 12px 32px rgba(51,59,69,.10);
+      --skeleton:#eef0f3;
     }
     .theme-dark {
-      --bg:#080d17; --surface:#111a2b; --surface-2:#0d1524; --surface-3:#18233a;
-      --border:#22304a; --border-strong:#35446200;
-      --border-strong:#354462;
-      --text-1:#e9eff9; --text-2:#9dabc2; --text-3:#7b8ba5;
-      --accent:#7286f7; --accent-hover:#93a3fa; --accent-tint:#1a2450; --on-accent:#0a1024;
-      --ok:#3ecf8e; --ok-tint:#0e2a20; --warn:#e0a33c; --warn-tint:#2c2110;
-      --err:#f3706f; --err-tint:#2e1517; --neutral:#93a1b8; --neutral-tint:#1a2437;
-      --shadow: 0 1px 2px rgba(0,0,0,.45); --shadow-lg: 0 12px 34px rgba(0,0,0,.55);
-      --skeleton:#1b2637;
+      --bg:#12161c; --surface:#1a1f27; --surface-2:#151a21; --surface-3:#232932;
+      --border:#2c333d; --border-strong:#3d4551;
+      --text-1:#edf0f4; --text-2:#a8b1bd; --text-3:#8590a0; --ink:#0e1217;
+      --accent:#20c4b5; --accent-strong:#3fded0; --accent-hover:#3fded0; --accent-tint:#0f2f2c; --on-accent:#0e1217;
+      --promo:#ff9a33; --promo-strong:#ffb164; --promo-tint:#33230e; --on-promo:#0e1217;
+      --ok:#5cc46a; --ok-strong:#7ad486; --ok-tint:#142a17;
+      --warn:#e0a33c; --warn-strong:#eebb63; --warn-tint:#2f2410;
+      --err:#ff7a5c; --err-strong:#ff9a83; --err-tint:#331a14;
+      --neutral:#a8b1bd; --neutral-strong:#c3cad4; --neutral-tint:#232932;
+      --shadow: 0 1px 2px rgba(0,0,0,.45); --shadow-lg: 0 14px 36px rgba(0,0,0,.55);
+      --skeleton:#232932;
     }
     .row-hit { min-height: 44px; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
@@ -49,8 +54,8 @@
   <header style="height:60px;flex:none;background:var(--surface);border-bottom:1px solid var(--border);
     display:flex;align-items:center;gap:24px;padding:0 24px">
     <div style="display:flex;align-items:center;gap:10px;min-width:210px">
-      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent);color:var(--on-accent);
-        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">М</div>
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);
+        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">М</div>
       <span style="font-weight:800;font-size:15px">Маркетплейс&nbsp;для&nbsp;бизнеса</span>
     </div>
     <div style="flex:1;max-width:520px;display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;
@@ -58,9 +63,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span style="font-size:14px">Поиск по услугам и товарам</span>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
-      <span style="font-size:13px;color:var(--text-2)">Кофейня «Пример», ИНН 7701234567</span>
-      <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-3);
-        display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-2)">АК</div>
+      <div style="text-align:right;line-height:1.3">
+        <div style="font-size:13px;font-weight:700">Анна Ковалёва</div>
+        <div style="font-size:12px;color:var(--text-3)">Кофейня «Пример» · Пятницкая, 41</div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--on-accent);
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">АК</div>
     </div>
   </header>
 

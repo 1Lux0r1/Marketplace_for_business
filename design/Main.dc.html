@@ -16,41 +16,46 @@
     .t { font-family: 'Manrope', 'Segoe UI', system-ui, -apple-system, sans-serif;
          -webkit-font-smoothing: antialiased; letter-spacing: -0.006em; }
     .num { font-variant-numeric: tabular-nums; }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { color: var(--accent-hover); }
+    a { color: var(--accent-strong); text-decoration: none; font-weight: 600; }
+    a:hover { color: var(--accent); }
     .theme-light {
-      --bg:#eef2f7; --surface:#ffffff; --surface-2:#f7f9fc; --surface-3:#e9eef5;
-      --border:#dee5ee; --border-strong:#c2cddc;
-      --text-1:#0e1726; --text-2:#4b5a70; --text-3:#64748b;
-      --accent:#3a4fe0; --accent-hover:#2c3fc4; --accent-tint:#e9ecfd; --on-accent:#ffffff;
-      --ok:#0f7a4a; --ok-tint:#e4f4ec; --warn:#9a5a00; --warn-tint:#fbf0dc;
-      --err:#bf2626; --err-tint:#fbeaea; --neutral:#5b6b82; --neutral-tint:#e9eef4;
-      --shadow: 0 1px 2px rgba(14,23,38,.07), 0 1px 1px rgba(14,23,38,.04);
-      --shadow-lg: 0 10px 30px rgba(14,23,38,.10);
-      --skeleton:#e4eaf2;
+      --bg:#ffffff; --surface:#ffffff; --surface-2:#f7f8fa; --surface-3:#eff1f4;
+      --border:#e5e7eb; --border-strong:#cbd1d9;
+      --text-1:#333b45; --text-2:#5a6472; --text-3:#6b7480; --ink:#1f2933;
+      --accent:#00a699; --accent-strong:#007d74; --accent-hover:#00c2b2; --accent-tint:#e2f7f5; --on-accent:#1f2933;
+      --promo:#f2820d; --promo-strong:#9a5800; --promo-tint:#fdf0dd; --on-promo:#1f2933;
+      --ok:#2e7d32; --ok-strong:#26692b; --ok-tint:#e7f3e8;
+      --warn:#a85f00; --warn-strong:#925300; --warn-tint:#fdf0dd;
+      --err:#d84a2c; --err-strong:#c4381b; --err-tint:#fceeea;
+      --neutral:#5a6472; --neutral-strong:#4a5361; --neutral-tint:#eff1f4;
+      --shadow: 0 1px 2px rgba(51,59,69,.06), 0 1px 3px rgba(51,59,69,.05);
+      --shadow-lg: 0 12px 32px rgba(51,59,69,.10);
+      --skeleton:#eef0f3;
     }
     .theme-dark {
-      --bg:#080d17; --surface:#111a2b; --surface-2:#0d1524; --surface-3:#18233a;
-      --border:#22304a; --border-strong:#35446200;
-      --border-strong:#354462;
-      --text-1:#e9eff9; --text-2:#9dabc2; --text-3:#7b8ba5;
-      --accent:#7286f7; --accent-hover:#93a3fa; --accent-tint:#1a2450; --on-accent:#0a1024;
-      --ok:#3ecf8e; --ok-tint:#0e2a20; --warn:#e0a33c; --warn-tint:#2c2110;
-      --err:#f3706f; --err-tint:#2e1517; --neutral:#93a1b8; --neutral-tint:#1a2437;
-      --shadow: 0 1px 2px rgba(0,0,0,.45); --shadow-lg: 0 12px 34px rgba(0,0,0,.55);
-      --skeleton:#1b2637;
+      --bg:#12161c; --surface:#1a1f27; --surface-2:#151a21; --surface-3:#232932;
+      --border:#2c333d; --border-strong:#3d4551;
+      --text-1:#edf0f4; --text-2:#a8b1bd; --text-3:#8590a0; --ink:#0e1217;
+      --accent:#20c4b5; --accent-strong:#3fded0; --accent-hover:#3fded0; --accent-tint:#0f2f2c; --on-accent:#0e1217;
+      --promo:#ff9a33; --promo-strong:#ffb164; --promo-tint:#33230e; --on-promo:#0e1217;
+      --ok:#5cc46a; --ok-strong:#7ad486; --ok-tint:#142a17;
+      --warn:#e0a33c; --warn-strong:#eebb63; --warn-tint:#2f2410;
+      --err:#ff7a5c; --err-strong:#ff9a83; --err-tint:#331a14;
+      --neutral:#a8b1bd; --neutral-strong:#c3cad4; --neutral-tint:#232932;
+      --shadow: 0 1px 2px rgba(0,0,0,.45); --shadow-lg: 0 14px 36px rgba(0,0,0,.55);
+      --skeleton:#232932;
     }
     .row-hit { min-height: 44px; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
   </style>
 </helmet>
-<div class="t {{theme}}" style="width:1440px;min-height:1400px;background:var(--bg);color:var(--text-1);display:flex;flex-direction:column">
+<div class="t {{theme}}" style="width:1440px;min-height:1520px;background:var(--bg);color:var(--text-1);display:flex;flex-direction:column">
 
   <header style="height:60px;flex:none;background:var(--surface);border-bottom:1px solid var(--border);
     display:flex;align-items:center;gap:24px;padding:0 24px">
     <div style="display:flex;align-items:center;gap:10px;min-width:210px">
-      <div style="width:28px;height:28px;border-radius:7px;background:var(--accent);color:var(--on-accent);
-        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px">М</div>
+      <div style="width:30px;height:30px;border-radius:9px;background:var(--accent);color:var(--on-accent);
+        display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px">М</div>
       <span style="font-weight:800;font-size:15px">Маркетплейс&nbsp;для&nbsp;бизнеса</span>
     </div>
     <div style="flex:1;max-width:520px;display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;
@@ -58,9 +63,12 @@
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span style="font-size:14px">Поиск по услугам и товарам</span>
     </div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
-      <span style="font-size:13px;color:var(--text-2)">Кофейня «Пример», ИНН 7701234567</span>
-      <div style="width:32px;height:32px;border-radius:8px;background:var(--surface-3);
-        display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-2)">АК</div>
+      <div style="text-align:right;line-height:1.3">
+        <div style="font-size:13px;font-weight:700">Анна Ковалёва</div>
+        <div style="font-size:12px;color:var(--text-3)">Кофейня «Пример» · Пятницкая, 41</div>
+      </div>
+      <div style="width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--on-accent);
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">АК</div>
     </div>
   </header>
 
@@ -78,220 +86,224 @@
     </nav>
 
     <main style="flex:1;min-width:0;padding:28px 32px 40px;display:flex;flex-direction:column;gap:22px">
-      <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+      
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap">
         <div>
           <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">Найти услугу</h1>
-          <p style="margin:6px 0 0;font-size:14px;color:var(--text-2);max-width:62ch">Выберите готовую услугу с ценой или опишите задачу, если подходящего варианта нет.</p>
+          <p style="margin:6px 0 0;font-size:14px;color:var(--text-2);max-width:62ch">Готовые услуги с ценой от проверенных подрядчиков. Выбираете сами — сделку ведём мы.</p>
         </div>
+        
       </div>
-      <div style="display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:10px;
-  background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow)">
-  <span style="color:var(--accent);flex:none;display:flex"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.2-2.9 7.9-7 9-4.1-1.1-7-4.8-7-9V6l7-3z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg></span>
-  <div style="font-size:13px;line-height:1.5;color:var(--text-2)">
-    <strong style="color:var(--text-1);font-weight:700">Деньги у площадки до приёмки работ.</strong>
-    Мы выпускаем договор, счёт и акт, удерживаем оплату и переводим её подрядчику только после того,
-    как вы приняли работу. Не приняли — разбираем и возвращаем.
+      <div style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;
+  background:var(--accent-tint);border:1px solid var(--accent)">
+  <span style="color:var(--accent-strong);flex:none;display:flex"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.2-2.9 7.9-7 9-4.1-1.1-7-4.8-7-9V6l7-3z"/><path d="M9.4 12.2l1.9 1.9 3.4-3.7"/></svg></span>
+  <div style="font-size:14px;line-height:1.55;color:var(--text-2)">
+    <strong style="color:var(--text-1);font-weight:800">Деньги лежат у нас, пока вы не примете работу.</strong>
+    Договор, счёт и акт выпускаем мы. Если что-то пойдёт не так — разбираемся тоже мы, а не вы с подрядчиком.
   </div>
-  <a href="#" style="margin-left:auto;white-space:nowrap;font-size:13px;font-weight:600">Как это работает</a>
+  <a href="#" style="margin-left:auto;white-space:nowrap;font-size:13px">Как это устроено</a>
 </div>
 
   <div style="display:flex;flex-direction:column;gap:12px">
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Все категории</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:700;white-space:nowrap;border:1px solid var(--accent);background:var(--accent-tint);color:var(--accent)">Санобработка</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Клининг</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">ОВиК и электрика</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Сантехника</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Охрана труда и СОУТ</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Профхимия</span></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Всё</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:700;white-space:nowrap;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent)">Санобработка</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Клининг</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Вентиляция и электрика</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Сантехника</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Охрана труда</span><span class="row-hit" style="display:inline-flex;align-items:center;padding:0 15px;border-radius:22px;font-size:13px;font-weight:500;white-space:nowrap;border:1px solid var(--border);background:var(--surface);color:var(--text-2)">Профхимия</span></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <span style="display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
-      letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin-right:4px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6.5h16M7 12h10M10 17.5h4"/></svg> Уточнить</span>
-    <span class="row-hit" style="display:inline-flex;align-items:center;gap:10px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text-2)">Зона: ЦАО, САО<span style="color:var(--text-3);transform:rotate(90deg);display:flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5l7 6.5-7 6.5"/></svg></span></span> <span class="row-hit" style="display:inline-flex;align-items:center;gap:10px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text-2)">Цена: любая<span style="color:var(--text-3);transform:rotate(90deg);display:flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5l7 6.5-7 6.5"/></svg></span></span> <span class="row-hit" style="display:inline-flex;align-items:center;gap:10px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text-2)">Выезд: за 24 часа<span style="color:var(--text-3);transform:rotate(90deg);display:flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5l7 6.5-7 6.5"/></svg></span></span>
+    <span class="row-hit" style="display:inline-flex;align-items:center;gap:9px;padding:0 15px;border-radius:22px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text-2)">Район: ЦАО, САО<span style="color:var(--text-3);transform:rotate(90deg);display:flex"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5l7 6.5-7 6.5"/></svg></span></span> <span class="row-hit" style="display:inline-flex;align-items:center;gap:9px;padding:0 15px;border-radius:22px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text-2)">Цена: любая<span style="color:var(--text-3);transform:rotate(90deg);display:flex"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5l7 6.5-7 6.5"/></svg></span></span> <span class="row-hit" style="display:inline-flex;align-items:center;gap:9px;padding:0 15px;border-radius:22px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--text-2)">Выезд: за 24 часа<span style="color:var(--text-3);transform:rotate(90deg);display:flex"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5l7 6.5-7 6.5"/></svg></span></span>
     <span class="num" style="margin-left:auto;font-size:13px;color:var(--text-3)">Показано 24 из 138</span>
   </div>
 </div>
 
   <section style="display:flex;flex-direction:column;gap:14px">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px">Для вас · по вашим прошлым заказам</div>
-    <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:16px"><div style="background:var(--accent-tint);border:1px solid var(--accent);border-radius:12px;padding:18px;
-      display:flex;flex-direction:column;gap:10px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Вы заказывали это в июле</div>
-      <h3 style="margin:0;font-size:15px;font-weight:700;line-height:1.3;color:var(--text-1)">Дезинсекция помещений общепита</h3>
-      <div style="font-size:13px;color:var(--text-2)">ООО «Санитарный контроль» · ЦАО</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px">
-        <span class="num" style="font-size:18px;font-weight:800;color:var(--text-1)">4 500 ₽</span>
-        <button style="background:var(--surface-3);color:var(--text-1);border:1px solid transparent;height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <h2 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-.015em">Мы подобрали для вас</h2>
+      <span style="font-size:13px;color:var(--text-3)">по тому, что вы уже заказывали</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:16px"><div style="background:var(--accent-tint);border:1px solid var(--accent);border-radius:14px;
+      padding:14px;display:flex;gap:16px;align-items:center">
+      <div style="width:132px;flex:none"><div style="height:104px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="252" cy="40" r="30" fill="var(--accent)" opacity=".16"/><rect x="112" y="52" width="58" height="72" rx="12" fill="var(--text-1)"/><rect x="128" y="34" width="26" height="20" rx="5" fill="var(--text-1)"/><path d="M154 40h26l10-12" stroke="var(--text-1)" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="206" cy="26" r="6" fill="var(--accent)"/><circle cx="228" cy="40" r="4.5" fill="var(--accent)"/><circle cx="216" cy="54" r="3.5" fill="var(--promo)"/><circle cx="240" cy="20" r="3" fill="var(--accent)"/><rect x="124" y="70" width="34" height="22" rx="4" fill="var(--surface)"/></svg></div></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px">
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
+          letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg> Вы заказывали в июле</div>
+        <h3 style="margin:0;font-size:16px;font-weight:800;line-height:1.28;color:var(--text-1)">Дезинсекция помещений общепита</h3>
+        <div style="font-size:13px;color:var(--text-2)">Санитарный контроль · ЦАО</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px">
+          <span class="num" style="font-size:19px;font-weight:800;color:var(--text-1);letter-spacing:-.02em">4 500 ₽</span>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
+        </div>
       </div>
-    </div><div style="background:var(--accent-tint);border:1px solid var(--accent);border-radius:12px;padding:18px;
-      display:flex;flex-direction:column;gap:10px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)">Обычно берут вместе с санобработкой</div>
-      <h3 style="margin:0;font-size:15px;font-weight:700;line-height:1.3;color:var(--text-1)">Плановая проверка вентиляции</h3>
-      <div style="font-size:13px;color:var(--text-2)">ООО «Климат-Сервис» · ЦАО</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px">
-        <span class="num" style="font-size:18px;font-weight:800;color:var(--text-1)">9 800 ₽</span>
-        <button style="background:var(--surface-3);color:var(--text-1);border:1px solid transparent;height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
+    </div><div style="background:var(--accent-tint);border:1px solid var(--accent);border-radius:14px;
+      padding:14px;display:flex;gap:16px;align-items:center">
+      <div style="width:132px;flex:none"><div style="height:104px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect x="96" y="34" width="92" height="90" rx="12" fill="var(--text-1)"/><circle cx="142" cy="79" r="30" fill="none" stroke="var(--accent)" stroke-width="8"/><path d="M142 61v36M124 70l36 18M160 70l-36 18" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"/><path d="M204 52h52M204 79h44M204 106h56" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"/><circle cx="266" cy="79" r="6" fill="var(--promo)"/></svg></div></div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:7px">
+        <div style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;
+          letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg> Берут вместе с санобработкой</div>
+        <h3 style="margin:0;font-size:16px;font-weight:800;line-height:1.28;color:var(--text-1)">Плановая чистка вытяжки</h3>
+        <div style="font-size:13px;color:var(--text-2)">Климат-Сервис · ЦАО</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:4px">
+          <span class="num" style="font-size:19px;font-weight:800;color:var(--text-1);letter-spacing:-.02em">9 800 ₽</span>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
+        </div>
       </div>
     </div></div>
   </section>
 
-  <section style="display:flex;flex-direction:column;gap:14px">
-    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px">Каталог · Санобработка и смежное</div>
-      <span style="font-size:12px;color:var(--text-3)">Сначала — с ближайшим выездом</span>
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <h2 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-.015em">Санобработка и смежное</h2>
+      <span style="font-size:13px;color:var(--text-3)">сначала — с ближайшим выездом</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:16px"><div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);height:100%"><div style="display:flex;flex-direction:column;gap:12px;height:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap">Санобработка</span>
-        <span style="font-size:12px;color:var(--text-3);white-space:nowrap">ЦАО</span>
-      </div>
-      <div>
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.3">Дезинсекция помещений общепита</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
-          <span style="font-weight:600;color:var(--text-1)">ООО «Санитарный контроль»</span>
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ok)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> ИНН проверен</span>
+    <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:20px"><div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative">
+      <div style="position:relative;padding:10px 10px 0"><div style="height:136px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="252" cy="40" r="30" fill="var(--accent)" opacity=".16"/><rect x="112" y="52" width="58" height="72" rx="12" fill="var(--text-1)"/><rect x="128" y="34" width="26" height="20" rx="5" fill="var(--text-1)"/><path d="M154 40h26l10-12" stroke="var(--text-1)" stroke-width="7" fill="none" stroke-linecap="round"/><circle cx="206" cy="26" r="6" fill="var(--accent)"/><circle cx="228" cy="40" r="4.5" fill="var(--accent)"/><circle cx="216" cy="54" r="3.5" fill="var(--promo)"/><circle cx="240" cy="20" r="3" fill="var(--accent)"/><rect x="124" y="70" width="34" height="22" rx="4" fill="var(--surface)"/></svg></div><div style="position:absolute;top:12px;right:12px"><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:var(--promo);color:var(--on-promo);font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap;letter-spacing:.01em">−15 % до 31 августа</span></div></div>
+      <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)">Санобработка</div>
+        <h3 style="margin:0;font-size:17px;font-weight:800;line-height:1.28;letter-spacing:-.01em">Дезинсекция помещений общепита</h3>
+        <div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text-2);line-height:1.45">
+          <span style="color:var(--accent-strong);flex:none;display:flex;padding-top:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg></span><span>Вернулись насекомые — приедем ещё раз бесплатно</span>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:7px;font-size:12px;color:var(--text-3)">
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--warn)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:600">4,8</span></span>
-          <span class="num">126 заказов закрыто</span>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:var(--text-3);
+          padding-top:2px">
+          <span style="font-weight:700;color:var(--text-1);font-size:13px">Санитарный контроль</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--ok)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> проверен</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--promo)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:700">4,8</span></span>
+          <span class="num">· 126 заказов</span>
         </div>
-      </div>
-      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;
-        justify-content:space-between;gap:12px">
-        <div>
-          <div class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">от 4 500 ₽</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">за объект до 100 м²</div>
-          <div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>выезд за 24 ч</div>
-        </div>
-        <button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
-      </div>
-    </div></div><div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);height:100%"><div style="display:flex;flex-direction:column;gap:12px;height:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap">Санобработка</span>
-        <span style="font-size:12px;color:var(--text-3);white-space:nowrap">ЦАО · САО</span>
-      </div>
-      <div>
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.3">Дератизация с договором на год</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
-          <span style="font-weight:600;color:var(--text-1)">ИП Ковалёв А. В.</span>
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ok)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> ИНН проверен</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:7px;font-size:12px;color:var(--text-3)">
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--warn)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:600">4,6</span></span>
-          <span class="num">89 заказов закрыто</span>
+        <div style="margin-top:auto;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="num" style="font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.1">от 4 500 ₽</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">за объект до 100 м²</div>
+          </div>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
         </div>
       </div>
-      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;
-        justify-content:space-between;gap:12px">
-        <div>
-          <div class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">от 3 200 ₽</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">за объект, 4 визита в год</div>
-          <div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>выезд за 48 ч</div>
+    </div><div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative">
+      <div style="position:relative;padding:10px 10px 0"><div style="height:136px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="240" cy="44" r="26" fill="var(--accent)" opacity=".16"/><path d="M96 124h74l-8-46H104z" fill="var(--text-1)"/><rect x="98" y="66" width="70" height="14" rx="7" fill="var(--accent)"/><path d="M196 124V44" stroke="var(--text-1)" stroke-width="9" stroke-linecap="round"/><path d="M176 124h40l-4-24h-32z" fill="var(--promo)"/><circle cx="232" cy="34" r="8" fill="var(--surface)"/><circle cx="252" cy="58" r="5" fill="var(--surface)"/><circle cx="214" cy="24" r="4" fill="var(--accent)"/></svg></div></div>
+      <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)">Клининг</div>
+        <h3 style="margin:0;font-size:17px;font-weight:800;line-height:1.28;letter-spacing:-.01em">Генеральная уборка после ремонта</h3>
+        <div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text-2);line-height:1.45">
+          <span style="color:var(--accent-strong);flex:none;display:flex;padding-top:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg></span><span>Работаем ночью, точка открывается вовремя</span>
         </div>
-        <button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
-      </div>
-    </div></div><div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);height:100%"><div style="display:flex;flex-direction:column;gap:12px;height:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap">Клининг</span>
-        <span style="font-size:12px;color:var(--text-3);white-space:nowrap">САО</span>
-      </div>
-      <div>
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.3">Генеральная уборка после ремонта</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
-          <span style="font-weight:600;color:var(--text-1)">ООО «Чистый цех»</span>
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ok)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> ИНН проверен</span>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:var(--text-3);
+          padding-top:2px">
+          <span style="font-weight:700;color:var(--text-1);font-size:13px">Чистый цех</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--ok)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> проверен</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--promo)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:700">4,9</span></span>
+          <span class="num">· 341 заказов</span>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:7px;font-size:12px;color:var(--text-3)">
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--warn)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:600">4,9</span></span>
-          <span class="num">341 заказов закрыто</span>
-        </div>
-      </div>
-      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;
-        justify-content:space-between;gap:12px">
-        <div>
-          <div class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">от 120 ₽</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">за м², минимум 60 м²</div>
-          <div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>выезд за 24 ч</div>
-        </div>
-        <button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
-      </div>
-    </div></div><div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);height:100%"><div style="display:flex;flex-direction:column;gap:12px;height:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap">ОВиК и электрика</span>
-        <span style="font-size:12px;color:var(--text-3);white-space:nowrap">ЦАО</span>
-      </div>
-      <div>
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.3">Обслуживание вентиляции кухни</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
-          <span style="font-weight:600;color:var(--text-1)">ООО «Климат-Сервис»</span>
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ok)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> ИНН проверен</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:7px;font-size:12px;color:var(--text-3)">
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--warn)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:600">4,7</span></span>
-          <span class="num">54 заказов закрыто</span>
+        <div style="margin-top:auto;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="num" style="font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.1">от 120 ₽</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">за м², минимум 60 м²</div>
+          </div>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
         </div>
       </div>
-      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;
-        justify-content:space-between;gap:12px">
-        <div>
-          <div class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">от 9 800 ₽</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">за систему, разовый выезд</div>
-          <div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>выезд за 72 ч</div>
+    </div><div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative">
+      <div style="position:relative;padding:10px 10px 0"><div style="height:136px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect x="96" y="34" width="92" height="90" rx="12" fill="var(--text-1)"/><circle cx="142" cy="79" r="30" fill="none" stroke="var(--accent)" stroke-width="8"/><path d="M142 61v36M124 70l36 18M160 70l-36 18" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"/><path d="M204 52h52M204 79h44M204 106h56" stroke="var(--accent)" stroke-width="8" stroke-linecap="round"/><circle cx="266" cy="79" r="6" fill="var(--promo)"/></svg></div></div>
+      <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)">Вентиляция</div>
+        <h3 style="margin:0;font-size:17px;font-weight:800;line-height:1.28;letter-spacing:-.01em">Чистка и обслуживание вытяжки кухни</h3>
+        <div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text-2);line-height:1.45">
+          <span style="color:var(--accent-strong);flex:none;display:flex;padding-top:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg></span><span>Протокол для проверки пожарного надзора</span>
         </div>
-        <button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
-      </div>
-    </div></div><div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);height:100%"><div style="display:flex;flex-direction:column;gap:12px;height:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap">Охрана труда и СОУТ</span>
-        <span style="font-size:12px;color:var(--text-3);white-space:nowrap">Москва</span>
-      </div>
-      <div>
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.3">СОУТ рабочих мест, до 10 мест</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
-          <span style="font-weight:600;color:var(--text-1)">ООО «Труд и безопасность»</span>
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ok)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> ИНН проверен</span>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:var(--text-3);
+          padding-top:2px">
+          <span style="font-weight:700;color:var(--text-1);font-size:13px">Климат-Сервис</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--ok)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> проверен</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--promo)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:700">4,7</span></span>
+          <span class="num">· 54 заказов</span>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:7px;font-size:12px;color:var(--text-3)">
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--warn)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:600">4,5</span></span>
-          <span class="num">203 заказов закрыто</span>
-        </div>
-      </div>
-      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;
-        justify-content:space-between;gap:12px">
-        <div>
-          <div class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">от 1 400 ₽</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">за рабочее место</div>
-          <div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>срок 10 рабочих дней</div>
-        </div>
-        <button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
-      </div>
-    </div></div><div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow);height:100%"><div style="display:flex;flex-direction:column;gap:12px;height:100%">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:6px;background:var(--neutral-tint);color:var(--neutral);font-size:12px;font-weight:600;line-height:1.35;white-space:nowrap">Профхимия</span>
-        <span style="font-size:12px;color:var(--text-3);white-space:nowrap">Москва</span>
-      </div>
-      <div>
-        <h3 style="margin:0 0 8px;font-size:16px;font-weight:700;line-height:1.3">Профхимия для пищевого производства</h3>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--text-2)">
-          <span style="font-weight:600;color:var(--text-1)">ООО «Химснаб»</span>
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--ok)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> ИНН проверен</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;margin-top:7px;font-size:12px;color:var(--text-3)">
-          <span style="display:inline-flex;align-items:center;gap:4px;color:var(--warn)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:600">4,4</span></span>
-          <span class="num">617 заказов закрыто</span>
+        <div style="margin-top:auto;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="num" style="font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.1">от 9 800 ₽</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">за систему, разовый выезд</div>
+          </div>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
         </div>
       </div>
-      <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:flex-end;
-        justify-content:space-between;gap:12px">
-        <div>
-          <div class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">от 2 190 ₽</div>
-          <div style="font-size:12px;color:var(--text-3);margin-top:2px">за комплект 5 л</div>
-          <div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.4V12l3.2 2"/></svg>доставка за 48 ч</div>
+    </div><div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative">
+      <div style="position:relative;padding:10px 10px 0"><div style="height:136px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="130" cy="66" r="44" fill="var(--accent)" opacity=".16"/><path d="M96 92a34 34 0 0168 0z" fill="var(--text-1)"/><rect x="88" y="92" width="84" height="13" rx="6.5" fill="var(--accent)"/><rect x="196" y="34" width="66" height="90" rx="10" fill="var(--text-1)"/><path d="M210 60l8 8 16-18M210 88l8 8 16-18" stroke="var(--accent)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="210" y="106" width="30" height="7" rx="3.5" fill="var(--promo)"/></svg></div><div style="position:absolute;top:12px;right:12px"><span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:7px;background:var(--promo);color:var(--on-promo);font-size:12px;font-weight:800;line-height:1.3;white-space:nowrap;letter-spacing:.01em">Выгодно от 10 мест</span></div></div>
+      <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)">Охрана труда</div>
+        <h3 style="margin:0;font-size:17px;font-weight:800;line-height:1.28;letter-spacing:-.01em">СОУТ рабочих мест под ключ</h3>
+        <div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text-2);line-height:1.45">
+          <span style="color:var(--accent-strong);flex:none;display:flex;padding-top:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg></span><span>Готовим и подаём отчёт в трудинспекцию сами</span>
         </div>
-        <button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:36px;padding:0 13px;border-radius:8px;font:600 13px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Подробнее</button>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:var(--text-3);
+          padding-top:2px">
+          <span style="font-weight:700;color:var(--text-1);font-size:13px">Труд и безопасность</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--ok)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> проверен</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--promo)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:700">4,5</span></span>
+          <span class="num">· 203 заказов</span>
+        </div>
+        <div style="margin-top:auto;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="num" style="font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.1">от 1 400 ₽</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">за рабочее место</div>
+          </div>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
+        </div>
       </div>
-    </div></div></div>
+    </div><div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative">
+      <div style="position:relative;padding:10px 10px 0"><div style="height:136px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="238" cy="46" r="28" fill="var(--promo)" opacity=".16"/><rect x="98" y="52" width="52" height="72" rx="9" fill="var(--text-1)"/><rect x="112" y="38" width="24" height="16" rx="4" fill="var(--text-1)"/><rect x="108" y="72" width="32" height="26" rx="4" fill="var(--surface)"/><rect x="162" y="72" width="44" height="52" rx="8" fill="var(--accent)"/><rect x="174" y="62" width="20" height="12" rx="4" fill="var(--accent)"/><rect x="218" y="88" width="38" height="36" rx="7" fill="var(--text-1)"/><rect x="228" y="80" width="18" height="10" rx="4" fill="var(--text-1)"/></svg></div></div>
+      <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)">Профхимия</div>
+        <h3 style="margin:0;font-size:17px;font-weight:800;line-height:1.28;letter-spacing:-.01em">Комплект профхимии для пищевого цеха</h3>
+        <div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text-2);line-height:1.45">
+          <span style="color:var(--accent-strong);flex:none;display:flex;padding-top:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg></span><span>Доставка за 48 часов, документы в комплекте</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:var(--text-3);
+          padding-top:2px">
+          <span style="font-weight:700;color:var(--text-1);font-size:13px">Химснаб</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--ok)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> проверен</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--promo)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:700">4,4</span></span>
+          <span class="num">· 617 заказов</span>
+        </div>
+        <div style="margin-top:auto;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="num" style="font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.1">от 2 190 ₽</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">за комплект 5 л</div>
+          </div>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
+        </div>
+      </div>
+    </div><div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative">
+      <div style="position:relative;padding:10px 10px 0"><div style="height:136px;background:var(--surface-3);border-radius:10px;overflow:hidden;flex:none"><svg viewBox="0 0 340 150" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><circle cx="246" cy="50" r="28" fill="var(--accent)" opacity=".16"/><path d="M92 108h56V64a20 20 0 0120-20h44" stroke="var(--text-1)" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="148" cy="64" r="17" fill="none" stroke="var(--accent)" stroke-width="8"/><path d="M148 47v34M131 64h34" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"/><path d="M232 88c0 9-7 16-16 16s-16-7-16-16 16-26 16-26 16 17 16 26z" fill="var(--accent)"/></svg></div></div>
+      <div style="padding:16px 18px 18px;display:flex;flex-direction:column;gap:11px;flex:1">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-strong)">Сантехника</div>
+        <h3 style="margin:0;font-size:17px;font-weight:800;line-height:1.28;letter-spacing:-.01em">Аварийный выезд сантехника</h3>
+        <div style="display:flex;align-items:flex-start;gap:7px;font-size:13px;color:var(--text-2);line-height:1.45">
+          <span style="color:var(--accent-strong);flex:none;display:flex;padding-top:2px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg></span><span>На объекте в течение двух часов, круглосуточно</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:var(--text-3);
+          padding-top:2px">
+          <span style="font-weight:700;color:var(--text-1);font-size:13px">Аквасервис</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--ok)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.6l5 5 10-11"/></svg> проверен</span>
+          <span style="display:inline-flex;align-items:center;gap:3px;color:var(--promo)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l2.5 5.2 5.5.7-4 3.9 1 5.6-5-2.7-5 2.7 1-5.6-4-3.9 5.5-.7z" fill="currentColor" stroke="none"/></svg><span class="num" style="color:var(--text-2);font-weight:700">4,6</span></span>
+          <span class="num">· 288 заказов</span>
+        </div>
+        <div style="margin-top:auto;padding-top:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+          <div>
+            <div class="num" style="font-size:23px;font-weight:800;letter-spacing:-.025em;line-height:1.1">от 3 500 ₽</div>
+            <div style="font-size:12px;color:var(--text-3);margin-top:3px">за выезд и первый час</div>
+          </div>
+          <button style="background:var(--accent);color:var(--on-accent);border:1px solid var(--accent);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Заказать</button>
+        </div>
+      </div>
+    </div></div>
   </section>
 
-  <section style="display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:10px;
-    border:1px dashed var(--border-strong);background:var(--surface-2)">
-    <div style="font-size:13px;line-height:1.5;color:var(--text-2);max-width:62ch">
-      <strong style="color:var(--text-1);font-weight:700">Не нашли подходящее?</strong>
-      Опишите задачу своими словами — подрядчики предложат цену и срок, вы выберете вариант.
-      Обычно первые предложения приходят в течение двух часов.
+  <section style="display:flex;align-items:center;gap:20px;padding:20px 22px;border-radius:14px;
+    border:1px solid var(--border);background:var(--surface-2)">
+    <div style="font-size:14px;line-height:1.55;color:var(--text-2);max-width:64ch">
+      <strong style="color:var(--text-1);font-weight:800">Ничего не подошло?</strong>
+      Расскажите своими словами, что нужно сделать. Подрядчики предложат цену и срок,
+      обычно первые ответы приходят за пару часов — выберете тот, что устроит.
     </div>
     <span style="margin-left:auto"><button style="background:transparent;color:var(--text-1);border:1px solid var(--border-strong);height:44px;padding:0 18px;border-radius:8px;font:600 14px/1 'Manrope',system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">Описать задачу</button></span>
   </section>
