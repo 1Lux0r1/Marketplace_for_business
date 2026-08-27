@@ -77,5 +77,40 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # Pages включается галочкой в настройках репозитория, из кода этого не сделать.
+      # Пока галочка не стоит, выкладка невозможна — но это настройка, а не поломка,
+      # и красить из-за неё пул-реквест в красное неправильно: тогда красный цвет
+      # перестанет значить «что-то сломано».
+      - name: Включён ли Pages
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages")
+          if [ "$code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Что сделать, чтобы демо заработало
+        if: steps.pages.outputs.enabled != 'true'
+        run: |
+          echo "::warning title=Демо собрано, но не выложено::GitHub Pages ещё не включён"
+          {
+            echo "## Демо собрано, но выложить его некуда"
+            echo
+            echo "Сборка прошла, все проверки зелёные — демо готово, но GitHub Pages"
+            echo "в репозитории пока не включён, и выкладывать некуда."
+            echo
+            echo "**Что сделать один раз:** Settings → Pages → Source → GitHub Actions."
+            echo
+            echo "После этого запустить заново: вкладка Actions → «Демо на GitHub Pages» → Re-run jobs."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - id: deployment
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/deploy-pages@v4
