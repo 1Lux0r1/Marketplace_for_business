@@ -23,6 +23,9 @@ create table platform.orgs (
   kpp           text,
   legal_address text,
   is_active     boolean not null default true,
+  -- Верификация ИНН: подрядчик регистрируется сам, значит проверять надо машинно
+  inn_verified_at   timestamptz,
+  inn_verification  jsonb,        -- ответ справочника: название, статус, ОКВЭД, дата
   created_at    timestamptz not null default now()
 );
 create index on platform.orgs (kind, is_active);
@@ -80,6 +83,15 @@ create index on platform.outbox (processed_at, id) where processed_at is null;
 create index on platform.outbox (aggregate, aggregate_id);
 create index on platform.outbox (type, occurred_at);
 ```
+
+Про `orgs.inn_verification`: подрядчик регистрируется сам (решение Q10), значит
+ИНН проверяется машинно, а не глазами оператора. Хранится весь ответ справочника,
+а не только флаг: через полгода понадобится ответить, на основании чего компанию
+пустили на площадку. Чем именно проверять — открытый вопрос Q11.
+
+Ролям `operator` и `admin` по-прежнему негде жить: `users.org_id` — `not null`,
+а `orgs.kind` бывает только `client` или `contractor`. Это открытый вопрос Q2,
+и он должен быть закрыт до генерации первой миграции `platform`.
 
 Про `outbox`: `bigserial`, а не UUID — порядок обработки должен совпадать с порядком
 записи. Частичный индекс по `processed_at is null` держит выборку воркера быстрой

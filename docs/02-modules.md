@@ -5,12 +5,12 @@
 | Модуль | Отвечает за | Владеет схемой | Зависит от | Часы |
 |---|---|---|---|---|
 | `platform` | Организации, пользователи, сессии, роли, outbox | `platform` | — | 26 |
-| `catalog` | Категории, подрядчики, зоны, **карточки услуг и модерация** | `catalog` | platform | 20 + витрина |
+| `catalog` | Категории, подрядчики, зоны, карточки услуг, **саморегистрация и модерация** | `catalog` | platform | 20 + 48 |
 | `intake` | Приём заявки: форма, Telegram, нормализация | `intake` | platform, ai | 18 |
-| `matching` | Персональные предложения по интересам, отклики | `matching` | catalog, ai | 26, см. Q8 |
+| `matching` | Кандидаты, рассылка предложений, отклики, **рекомендации по каталогу** | `matching` | catalog, ai | 26 + 12 |
 | `deal` | Сделка: статусы, цена, сроки, переписка, приёмка | `deal` | intake, matching, catalog | 28 |
 | `documents` | Договор, счёт, акт: шаблоны, PDF, нумерация | `documents` | deal | 24 |
-| `payments` | Ссылки, вебхуки, комиссия, реестр выплат | `payments` | deal | 16 |
+| `payments` | Ссылки, вебхуки, **удержание до акта**, комиссия, реестр выплат | `payments` | deal | 16 |
 | `notifications` | Почта, Telegram, шаблоны, ретраи | `notifications` | слушает события | 14 |
 | `analytics` | Журнал событий, метрики, когорты | `analytics` | слушает события | 8 |
 
@@ -20,14 +20,21 @@
 **Итого урезанная конфигурация: 298 часов** — оценка до корректировки продуктовой
 модели. Сумма столбца 252 ч, разница — коэффициент переделок 1,2 (см. Q5).
 
-> **Оценка пересматривается.** Каталог как основной путь клиента добавляет
-> к `catalog` карточки услуг с ценой, модерацию и публикацию, а к интерфейсам —
-> витрину с поиском и фильтрами. По масштабу это сопоставимо с `catalog` (20 ч)
-> и `client-web` (16 ч) вместе взятыми. Часть при этом возвращается: если подбор
-> станет рекомендацией по каталогу, `matching` (26 ч) теряет сбор откликов,
-> таймер двух часов и экран трёх вариантов. Итоговая цифра зависит от ответа
-> на Q8 и Q10 в `docs/06-open-questions.md` — до ответа не пересчитываю,
-> чтобы не подставлять правдоподобное.
+> **Оценка пересчитана 27.08.2026 после ответов на Q8, Q9 и Q10.**
+>
+> | Что добавилось | Часов |
+> |---|---|
+> | `catalog.listings`: карточки, модерация, кабинет карточек подрядчика | 26 |
+> | Витрина: каталог, фильтры, карточка услуги, оформление заказа | 32 |
+> | Саморегистрация подрядчика, верификация ИНН, очередь модерации | 22 |
+> | Рекомендации: правила плюс метод `ai-service` | 12 |
+> | Второй вход в сделку: снимок цены, переходы, тесты обоих путей | 10 |
+> | **Итого к базовым 252** | **+102** |
+>
+> Новая база 354 ч, с коэффициентом переделок 1,2 — **около 425 часов**.
+> При 62 ч/мес это примерно 6,9 месяца чистой работы и 8–10 месяцев календаря
+> против семи по исходному плану. Цена названа один раз; решение о сокращениях —
+> за разработчиком, варианты в `docs/06-open-questions.md`, раздел «Решено», Q10.
 
 ## Форма контракта модуля
 
@@ -65,6 +72,9 @@ export type DealAccepted = {
 
 | Событие | Публикует | Слушают |
 |---|---|---|
+| `contractor.registered` | catalog | notifications, analytics |
+| `contractor.verified` | catalog | notifications, analytics |
+| `contractor.rejected` | catalog | notifications, analytics |
 | `listing.submitted` | catalog | notifications, analytics |
 | `listing.published` | catalog | notifications, analytics |
 | `listing.rejected` | catalog | notifications, analytics |
@@ -74,10 +84,16 @@ export type DealAccepted = {
 | `deal.quoted` | deal | notifications, analytics |
 | `deal.accepted` | deal | documents, notifications, analytics |
 | `act.issued` | documents | payments, notifications, analytics |
-| `payment.captured` | payments | deal, notifications, analytics |
+| `payment.held` | payments | deal, notifications, analytics |
+| `payout.released` | payments | notifications, analytics |
 | `deal.completed` | deal | payments, notifications, analytics |
 | `deal.disputed` | deal | notifications, analytics |
 | `deal.cancelled` | deal | notifications, analytics |
+
+`payment.held` вместо `payment.captured`: деньги пришли площадке и **лежат**,
+а не зачтены подрядчику. Имя события — это то, что читает разработчик через полгода,
+и оно не должно врать про момент, когда деньги становятся чужими.
+`payout.released` публикуется только после `deal.completed`, никогда раньше.
 
 `deal.accepted` публикуется одинаково на обоих путях — из каталога и из заявки.
 Подписчикам (`documents`, `notifications`, `payments`) не должно быть видно,
