@@ -1,0 +1,30 @@
+[Unit]
+Description=marketplace-for-business — приложение
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=app
+WorkingDirectory=/srv/marketplace
+EnvironmentFile=/srv/marketplace/.env
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Телеметрия Next уезжает за пределы РФ — выключена (§8)
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/bin/pnpm start
+Restart=always
+RestartSec=3
+# Приложение падает на старте, если не хватает переменных — это специально.
+# StartLimit не даёт молотить перезапусками, пока .env не поправят.
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/marketplace/.next /var/log/marketplace
+
+[Install]
+WantedBy=multi-user.target

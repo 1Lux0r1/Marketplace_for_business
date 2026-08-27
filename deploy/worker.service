@@ -1,0 +1,27 @@
+[Unit]
+Description=marketplace-for-business — воркер outbox
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=app
+WorkingDirectory=/srv/marketplace
+EnvironmentFile=/srv/marketplace/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/pnpm worker
+Restart=always
+RestartSec=5
+# Воркер можно останавливать спокойно: невзятые события подождут,
+# взятые и не законченные обработаются снова (§5)
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/marketplace
+
+[Install]
+WantedBy=multi-user.target
