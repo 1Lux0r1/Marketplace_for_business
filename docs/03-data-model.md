@@ -34,28 +34,61 @@ create index on platform.orgs (kind, is_active);
 create unique index on platform.orgs (inn) where inn is not null;
 
 create table platform.users (
-  id            uuid primary key,
-  org_id        uuid not null references platform.orgs(id),
-  email         text not null,
-  phone         text,
-  full_name     text not null,
-  role          text not null check (role in ('owner','staff','operator','admin')),
-  is_active     boolean not null default true,
-  created_at    timestamptz not null default now(),
-  last_login_at timestamptz
+  id                uuid primary key,
+  org_id            uuid not null references platform.orgs(id),
+  email             text not null,
+  email_verified_at timestamptz,      -- почта подтверждена переходом по ссылке
+  phone             text,
+  full_name         text not null,
+  role              text not null check (role in ('owner','staff','operator','admin')),
+  is_active         boolean not null default true,
+  created_at        timestamptz not null default now(),
+  last_login_at     timestamptz
 );
 create unique index on platform.users (lower(email));
 
--- Вход по ссылке на почту: пароля в системе нет
+-- Способы входа отдельной таблицей, а не колонками в users. Добавить вход
+-- по телефону, через Telegram или через партнёра станет строкой нового вида,
+-- а не изменением структуры пользователей и не переносом данных
+create table platform.credentials (
+  id           uuid primary key,
+  user_id      uuid not null references platform.users(id) on delete cascade,
+  kind         text not null check (kind in ('password','email_link')),
+  secret_hash  text,          -- пароль: медленный хэш; для email_link пусто
+  params       jsonb not null default '{}',   -- соль и параметры хэширования
+  is_active    boolean not null default true,
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz
+);
+create unique index on platform.credentials (user_id, kind) where is_active;
+
+-- Одноразовые ссылки: и для входа, и для подтверждения почты, и для установки
+-- пароля. Одна таблица с назначением вместо трёх одинаковых
 create table platform.login_tokens (
   id          uuid primary key,
   email       text not null,
+  purpose     text not null default 'login'
+              check (purpose in ('login','verify_email','set_password','reset_password')),
   token_hash  text not null,
   expires_at  timestamptz not null,
   used_at     timestamptz,
   created_at  timestamptz not null default now()
 );
-create index on platform.login_tokens (token_hash);
+create unique index on platform.login_tokens (token_hash);
+create index on platform.login_tokens (email, purpose, created_at desc);
+
+-- Журнал попыток входа. Нужен, чтобы ограничивать частоту и ловить подбор
+-- пароля. Одна таблица обслуживает и вход по паролю, и вход по ссылке
+create table platform.login_attempts (
+  id         bigserial primary key,
+  email      text not null,
+  ip         inet,
+  method     text not null check (method in ('password','email_link')),
+  succeeded  boolean not null,
+  at         timestamptz not null default now()
+);
+create index on platform.login_attempts (lower(email), at desc);
+create index on platform.login_attempts (ip, at desc);
 
 create table platform.sessions (
   id          uuid primary key,
@@ -66,7 +99,7 @@ create table platform.sessions (
   user_agent  text,
   created_at  timestamptz not null default now()
 );
-create index on platform.sessions (token_hash);
+create unique index on platform.sessions (token_hash);
 create index on platform.sessions (user_id);
 
 -- Журнал событий: сердце системы
@@ -90,6 +123,20 @@ create index on platform.outbox (type, occurred_at);
 ИНН проверяется машинно, а не глазами оператора. Хранится весь ответ справочника,
 а не только флаг: через полгода понадобится ответить, на основании чего компанию
 пустили на площадку. Чем именно проверять — открытый вопрос Q11.
+
+Про способы входа. Пароль и вход по ссылке — **две записи одного вида**,
+а не два разных механизма: у пользователя может быть и то, и другое одновременно.
+Это и есть запас на будущее: вход по телефону или через партнёра добавляется
+новым значением `kind`, без переноса данных и без правки таблицы пользователей.
+
+Пароль хранится медленным хэшем — таким, который специально считается долго,
+чтобы перебор по украденной базе был неподъёмным. Ссылки, наоборот, хранятся
+быстрым отпечатком: у них 32 случайных байта, перебирать нечего.
+
+`login_attempts` — журнал попыток. По нему считается ограничение частоты:
+и «не больше трёх писем на адрес за 15 минут», и «после пяти неверных паролей
+подряд вход по паролю для этого адреса приостанавливается». Отдельного
+хранилища для счётчиков не заводим (§3).
 
 Про организацию площадки. `users.org_id` остаётся `not null` — правило
 «у каждого человека есть компания» выполняется без исключений. Операторы
