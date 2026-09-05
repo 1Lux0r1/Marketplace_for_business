@@ -12,6 +12,15 @@ import { config } from './config'
 
 export type Db = ReturnType<typeof drizzle>
 
+/**
+ * Соединение или открытая транзакция — одно и то же для запросов.
+ *
+ * Нужно, чтобы несколько шагов одной операции (завести компанию, человека,
+ * пароль) записывались вместе или не записывались вовсе: иначе после сбоя
+ * на середине в базе остаётся компания без владельца, и разбирать её руками.
+ */
+export type Executor = Db | Parameters<Parameters<Db['transaction']>[0]>[0]
+
 let client: ReturnType<typeof postgres> | undefined
 let db: Db | undefined
 

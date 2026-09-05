@@ -14,46 +14,102 @@ DDL `catalog.listings` и `catalog.listing_zones` добавлен после к
 ```sql
 create schema platform;
 
--- Организация: и клиент, и подрядчик — это org с разным kind
+-- Организация. Одна и та же компания может и заказывать, и выполнять —
+-- ограничивать это нечем и незачем (решение от 05.09.2026)
 create table platform.orgs (
   id            uuid primary key,
-  kind          text not null check (kind in ('client','contractor')),
+  legal_form    text not null check (legal_form in ('individual','sole_trader','company')),
+  is_client     boolean not null default true,   -- заказывает
+  is_contractor boolean not null default false,  -- выполняет
+  -- Служебная организация самой площадки: в ней живут operator и admin,
+  -- её реквизиты попадают в договор, счёт и акт (решение Q2). Такая ровно одна
+  is_platform   boolean not null default false,
   name          text not null,
   inn           text,
   kpp           text,
   legal_address text,
   is_active     boolean not null default true,
-  -- Верификация ИНН: подрядчик регистрируется сам, значит проверять надо машинно
+  -- Данные справочника: название, статус, руководитель, дата ответа.
+  -- Хранится ответ целиком — через полгода надо уметь ответить,
+  -- на основании чего компанию пустили на площадку
   inn_verified_at   timestamptz,
-  inn_verification  jsonb,        -- ответ справочника: название, статус, ОКВЭД, дата
+  inn_verification  jsonb,
   created_at    timestamptz not null default now()
 );
-create index on platform.orgs (kind, is_active);
+create index on platform.orgs (is_client, is_active) where is_client;
+create index on platform.orgs (is_contractor, is_active) where is_contractor;
 create unique index on platform.orgs (inn) where inn is not null;
+create unique index on platform.orgs ((true)) where is_platform;
 
 create table platform.users (
-  id            uuid primary key,
-  org_id        uuid not null references platform.orgs(id),
-  email         text not null,
-  phone         text,
-  full_name     text not null,
-  role          text not null check (role in ('owner','staff','operator','admin')),
-  is_active     boolean not null default true,
-  created_at    timestamptz not null default now(),
-  last_login_at timestamptz
+  id                uuid primary key,
+  org_id            uuid not null references platform.orgs(id),
+  email             text not null,
+  email_verified_at timestamptz,      -- почта подтверждена кодом из письма
+  -- Телефон обязателен и может быть способом входа, поэтому хранится
+  -- в E.164 (+79161234567) и подтверждается отдельно
+  phone             text not null,
+  phone_verified_at timestamptz,
+  full_name         text not null,
+  -- Должность, а не права: директор, бухгалтер, менеджер. Права выдаются
+  -- приглашением, а не выбором при регистрации (решение Q19.3)
+  position          text,
+  -- Совпало ли ФИО с руководителем в реестре. Это не удостоверение личности,
+  -- а проверка «заявленное не противоречит реестру»
+  position_checked_at timestamptz,
+  position_check      jsonb,
+  role              text not null check (role in ('owner','staff','operator','admin')),
+  is_active         boolean not null default true,
+  created_at        timestamptz not null default now(),
+  last_login_at     timestamptz
 );
 create unique index on platform.users (lower(email));
+-- Уникальность телефона — только среди подтверждённых. Иначе достаточно
+-- зарегистрироваться на чужой номер, чтобы настоящий владелец не смог
+create unique index on platform.users (phone) where phone_verified_at is not null;
 
--- Вход по ссылке на почту: пароля в системе нет
+-- Способы входа отдельной таблицей, а не колонками в users. Добавить вход
+-- по телефону, через Telegram или через партнёра станет строкой нового вида,
+-- а не изменением структуры пользователей и не переносом данных
+create table platform.credentials (
+  id           uuid primary key,
+  user_id      uuid not null references platform.users(id) on delete cascade,
+  kind         text not null check (kind in ('password','email_link')),
+  secret_hash  text,          -- пароль: медленный хэш; для email_link пусто
+  params       jsonb not null default '{}',   -- соль и параметры хэширования
+  is_active    boolean not null default true,
+  created_at   timestamptz not null default now(),
+  last_used_at timestamptz
+);
+create unique index on platform.credentials (user_id, kind) where is_active;
+
+-- Одноразовые ссылки: и для входа, и для подтверждения почты, и для установки
+-- пароля. Одна таблица с назначением вместо трёх одинаковых
 create table platform.login_tokens (
   id          uuid primary key,
   email       text not null,
+  purpose     text not null default 'login'
+              check (purpose in ('login','verify_email','set_password','reset_password')),
   token_hash  text not null,
   expires_at  timestamptz not null,
   used_at     timestamptz,
   created_at  timestamptz not null default now()
 );
-create index on platform.login_tokens (token_hash);
+create unique index on platform.login_tokens (token_hash);
+create index on platform.login_tokens (email, purpose, created_at desc);
+
+-- Журнал попыток входа. Нужен, чтобы ограничивать частоту и ловить подбор
+-- пароля. Одна таблица обслуживает и вход по паролю, и вход по ссылке
+create table platform.login_attempts (
+  id         bigserial primary key,
+  email      text not null,
+  ip         inet,
+  method     text not null check (method in ('password','email_link')),
+  succeeded  boolean not null,
+  at         timestamptz not null default now()
+);
+create index on platform.login_attempts (lower(email), at desc);
+create index on platform.login_attempts (ip, at desc);
 
 create table platform.sessions (
   id          uuid primary key,
@@ -64,7 +120,7 @@ create table platform.sessions (
   user_agent  text,
   created_at  timestamptz not null default now()
 );
-create index on platform.sessions (token_hash);
+create unique index on platform.sessions (token_hash);
 create index on platform.sessions (user_id);
 
 -- Журнал событий: сердце системы
@@ -89,9 +145,38 @@ create index on platform.outbox (type, occurred_at);
 а не только флаг: через полгода понадобится ответить, на основании чего компанию
 пустили на площадку. Чем именно проверять — открытый вопрос Q11.
 
-Ролям `operator` и `admin` по-прежнему негде жить: `users.org_id` — `not null`,
-а `orgs.kind` бывает только `client` или `contractor`. Это открытый вопрос Q2,
-и он должен быть закрыт до генерации первой миграции `platform`.
+Про способы входа. Пароль и вход по ссылке — **две записи одного вида**,
+а не два разных механизма: у пользователя может быть и то, и другое одновременно.
+Это и есть запас на будущее: вход по телефону или через партнёра добавляется
+новым значением `kind`, без переноса данных и без правки таблицы пользователей.
+
+Пароль хранится медленным хэшем — таким, который специально считается долго,
+чтобы перебор по украденной базе был неподъёмным. Ссылки, наоборот, хранятся
+быстрым отпечатком: у них 32 случайных байта, перебирать нечего.
+
+`login_attempts` — журнал попыток. По нему считается ограничение частоты:
+и «не больше трёх писем на адрес за 15 минут», и «после пяти неверных паролей
+подряд вход по паролю для этого адреса приостанавливается». Отдельного
+хранилища для счётчиков не заводим (§3).
+
+Про роли организации. Заказчик и подрядчик — **не взаимоисключающие**:
+одна и та же компания может и заказывать, и выполнять. Поэтому вместо одного
+`kind` два независимых признака. Практически это значит, что в интерфейсе
+у такой компании доступны оба набора разделов, и переключаться между ними
+человек должен явно, а не искать нужный раздел среди восьми.
+
+`is_contractor` не выдаётся при регистрации автоматически: стать подрядчиком —
+отдельное действие с проверкой ИНН и подписанием договора. Регистрация даёт
+`is_client`; «начать выполнять работы» человек включает сам, когда готов.
+
+Про организацию площадки. `users.org_id` остаётся `not null` — правило
+«у каждого человека есть компания» выполняется без исключений. Операторы
+и администраторы принадлежат организации с `is_platform`, и её же реквизиты
+берёт модуль `documents`, когда выпускает договор и счёт от имени площадки.
+
+Такая организация в системе ровно одна, и это обеспечено частичным уникальным
+индексом, а не только кодом: `unique ((true)) where is_platform` физически
+не даст создать вторую.
 
 Про `outbox`: `bigserial`, а не UUID — порядок обработки должен совпадать с порядком
 записи. Частичный индекс по `processed_at is null` держит выборку воркера быстрой

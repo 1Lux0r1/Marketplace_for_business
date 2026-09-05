@@ -18,6 +18,26 @@ const buildTime = process.env.BUILD_TIME ?? ''
 const isDemoExport = process.env.DEMO_EXPORT === '1'
 const demoBasePath = process.env.DEMO_BASE_PATH ?? '/Marketplace_for_business'
 
+/**
+ * В демо нет сервера, а значит нет ни команд формы, ни сессии: подставляем
+ * заглушки прямо на сборке. Так формы входа и регистрации живут в одном
+ * экземпляре и не обрастают проверками «а мы сейчас в демо».
+ *
+ * Подмена именно после разрешения пути: обычный alias здесь не работает,
+ * потому что `@/` разбирает свой обработчик Next, и до alias дело не доходит.
+ */
+const DEMO_STUBBED = /[\\/]server[\\/](auth-actions|session)$/
+
+type WebpackConfig = { plugins: unknown[] }
+type WebpackContext = {
+  webpack: {
+    NormalModuleReplacementPlugin: new (
+      test: RegExp,
+      replace: (resource: { request: string }) => void,
+    ) => unknown
+  }
+}
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -31,6 +51,16 @@ const nextConfig: NextConfig = {
         images: { unoptimized: true },
       }
     : {}),
+  webpack(config: WebpackConfig, { webpack }: WebpackContext) {
+    if (isDemoExport) {
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(DEMO_STUBBED, (resource) => {
+          resource.request = `${resource.request}.demo`
+        }),
+      )
+    }
+    return config
+  },
   // Телеметрия Next уезжает за пределы РФ — выключена переменной
   // NEXT_TELEMETRY_DISABLED в systemd-юните и в скрипте деплоя (§8).
 }

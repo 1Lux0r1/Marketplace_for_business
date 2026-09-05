@@ -61,6 +61,7 @@
 
 | Документ | О чём |
 |---|---|
+| [`CHANGELOG.md`](CHANGELOG.md) | Что менялось в каждом релизе: для человека, а не для разработчика |
 | [`CLAUDE.md`](CLAUDE.md) | Правила проекта: статус документа, архитектура, стек, границы модулей, соглашения по коду, дизайн и интерфейс |
 | [`docs/01-architecture.md`](docs/01-architecture.md) | Процессы, поток данных, внешние зависимости, правило деградации |
 | [`docs/02-modules.md`](docs/02-modules.md) | Ответственность модулей, форма контракта, события, статусы сделки |
@@ -71,7 +72,9 @@
 | [`docs/05-sprint-03.md`](docs/05-sprint-03.md) | Месяц 3: админский интерфейс и приём заявки |
 | [`docs/06-open-questions.md`](docs/06-open-questions.md) | Что ещё не решено и кто это решает |
 | [`docs/08-server-requirements.md`](docs/08-server-requirements.md) | Что покупать: сервер под 10 одновременных пользователей |
-| [`docs/09-money-holding.md`](docs/09-money-holding.md) | Четыре способа удержания денег клиента, с ценой и рекомендацией |
+| [`docs/09-money-holding.md`](docs/09-money-holding.md) | Схемы удержания денег клиента: строим А, Б и В |
+| [`docs/10-commission-rates.md`](docs/10-commission-rates.md) | Ставки комиссии: категорийные, акционные, две лестницы скидок |
+| [`docs/11-electronic-signature.md`](docs/11-electronic-signature.md) | Подписание документов усиленной квалифицированной подписью |
 | [`docs/00-starter-guide.md`](docs/00-starter-guide.md) | Как пользоваться этим пакетом дальше |
 | [`prompts/kickoff.md`](prompts/kickoff.md) | Готовые промпты: старт, очередная задача, ревью перед деплоем |
 
