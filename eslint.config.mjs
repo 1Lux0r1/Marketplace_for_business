@@ -55,7 +55,7 @@ const siblingModuleEscape = {
 }
 
 export default tseslint.config(
-  { ignores: ['.next/**', 'node_modules/**', 'drizzle/**', 'design/**', 'next-env.d.ts'] },
+  { ignores: ['.next/**', 'out/**', 'node_modules/**', 'drizzle/**', 'design/**', 'next-env.d.ts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
