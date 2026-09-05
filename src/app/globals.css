@@ -1,9 +1,62 @@
 @import "tailwindcss";
 
+/* ─── Manrope. Файлы лежат в src/ui/fonts, а не тянутся с серверов Google:
+       сборка идёт на российском сервере, и внешние шрифты §8 держит снаружи.
+       Подробности и размеры — src/ui/fonts/README.md.
+
+       Путь относительный, а не от корня: демо на GitHub Pages отдаётся
+       из подпапки, и абсолютный /fonts/… там даёт 404. Относительный
+       обрабатывает сборщик — он же проставляет префикс и метку версии.
+
+       Шрифт переменный: один файл на веса 200–800, отдельных начертаний нет.
+       unicode-range делит его на три файла, и браузер берёт только те, чьи
+       символы встретились на странице. Знак рубля живёт в расширенной латинице,
+       знак номера — в кириллице; без этих двух файлов «5 400 ₽» и «Заказ № 1240»
+       набирались бы системным шрифтом посреди строки.                         ─── */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../ui/fonts/manrope-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../ui/fonts/manrope-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../ui/fonts/manrope-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
 /* Тёмная тема включается классом .dark на <html>; .light — принудительно светлая */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ─── Светлая тема. Палитра «Минимализм с деловой энергией» (CLAUDE.md §7.2) ─── */
+/* ─── Светлая тема. Палитра «Минимализм с деловой энергией» (CLAUDE.md §7.2).
+
+       Выгода и «нужно действие» разведены намеренно и проверяются тестом.
+       До этого подложки у обеих были буквально одним цветом #fdf0dd, а §7.2
+       требует разводить их насыщенностью, подачей и текстом сразу — работали
+       только два способа из трёх. Теперь выгода — насыщенный тёплый оранжевый
+       (тон 33°), «нужно действие» — настоящий янтарь побледнее (тон 44°),
+       как §7.2 его и называет: «ждём вашей приёмки» — это ожидание, а не
+       проблема, и выглядеть оно должно иначе, чем «−15 %».
+
+       Значения текста выведены из порога §7.6, а не выбраны на глаз:
+       src/ui/tokens.test.ts считает контраст каждой пары и не даст ей уехать. ─── */
 :root {
   --bg: #ffffff;
   --surface: #ffffff;
@@ -13,21 +66,21 @@
   --border-strong: #cbd1d9;
   --text-1: #333b45;
   --text-2: #5a6472;
-  --text-3: #6b7480;
+  --text-3: #666e7a;
   --accent: #00a699;
   --accent-strong: #007d74;
   --accent-tint: #e2f7f5;
   --on-accent: #1f2933;
   --promo: #f2820d;
   --promo-strong: #9a5800;
-  --promo-tint: #fdf0dd;
+  --promo-tint: #ffe4c2;
   --on-promo: #1f2933;
   --ok: #2e7d32;
   --ok-strong: #26692b;
   --ok-tint: #e7f3e8;
-  --warn: #a85f00;
-  --warn-strong: #925300;
-  --warn-tint: #fdf0dd;
+  --warn: #94690a;
+  --warn-strong: #82600f;
+  --warn-tint: #f9f2de;
   --err: #d84a2c;
   --err-strong: #c4381b;
   --err-tint: #fceeea;
@@ -56,14 +109,14 @@
   --on-accent: #0e1217;
   --promo: #ff9a33;
   --promo-strong: #ffb164;
-  --promo-tint: #33230e;
+  --promo-tint: #3d2410;
   --on-promo: #0e1217;
   --ok: #5cc46a;
   --ok-strong: #7ad486;
   --ok-tint: #142a17;
-  --warn: #e0a33c;
-  --warn-strong: #eebb63;
-  --warn-tint: #2f2410;
+  --warn: #d9ab48;
+  --warn-strong: #e6c273;
+  --warn-tint: #302a16;
   --err: #ff7a5c;
   --err-strong: #ff9a83;
   --err-tint: #331a14;
@@ -90,14 +143,14 @@
     --on-accent: #0e1217;
     --promo: #ff9a33;
     --promo-strong: #ffb164;
-    --promo-tint: #33230e;
+    --promo-tint: #3d2410;
     --on-promo: #0e1217;
     --ok: #5cc46a;
     --ok-strong: #7ad486;
     --ok-tint: #142a17;
-    --warn: #e0a33c;
-    --warn-strong: #eebb63;
-    --warn-tint: #2f2410;
+    --warn: #d9ab48;
+    --warn-strong: #e6c273;
+    --warn-tint: #302a16;
     --err: #ff7a5c;
     --err-strong: #ff9a83;
     --err-tint: #331a14;
@@ -156,7 +209,7 @@
   --text-lead--line-height: 1.4;
   --text-section: 1.25rem;
   --text-section--line-height: 1.3;
-  --text-page: 1.75rem;
+  --text-page: 1.625rem;
   --text-page--line-height: 1.2;
   --text-display: 2.125rem;
   --text-display--line-height: 1.1;
