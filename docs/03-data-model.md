@@ -14,38 +14,59 @@ DDL `catalog.listings` и `catalog.listing_zones` добавлен после к
 ```sql
 create schema platform;
 
--- Организация: и клиент, и подрядчик — это org с разным kind
+-- Организация. Одна и та же компания может и заказывать, и выполнять —
+-- ограничивать это нечем и незачем (решение от 05.09.2026)
 create table platform.orgs (
   id            uuid primary key,
-  -- 'platform' — служебная организация самой площадки: в ней живут operator
-  -- и admin, её реквизиты попадают в договор, счёт и акт (решение Q2)
-  kind          text not null check (kind in ('client','contractor','platform')),
+  legal_form    text not null check (legal_form in ('individual','sole_trader','company')),
+  is_client     boolean not null default true,   -- заказывает
+  is_contractor boolean not null default false,  -- выполняет
+  -- Служебная организация самой площадки: в ней живут operator и admin,
+  -- её реквизиты попадают в договор, счёт и акт (решение Q2). Такая ровно одна
+  is_platform   boolean not null default false,
   name          text not null,
   inn           text,
   kpp           text,
   legal_address text,
   is_active     boolean not null default true,
-  -- Верификация ИНН: подрядчик регистрируется сам, значит проверять надо машинно
+  -- Данные справочника: название, статус, руководитель, дата ответа.
+  -- Хранится ответ целиком — через полгода надо уметь ответить,
+  -- на основании чего компанию пустили на площадку
   inn_verified_at   timestamptz,
-  inn_verification  jsonb,        -- ответ справочника: название, статус, ОКВЭД, дата
+  inn_verification  jsonb,
   created_at    timestamptz not null default now()
 );
-create index on platform.orgs (kind, is_active);
+create index on platform.orgs (is_client, is_active) where is_client;
+create index on platform.orgs (is_contractor, is_active) where is_contractor;
 create unique index on platform.orgs (inn) where inn is not null;
+create unique index on platform.orgs ((true)) where is_platform;
 
 create table platform.users (
   id                uuid primary key,
   org_id            uuid not null references platform.orgs(id),
   email             text not null,
-  email_verified_at timestamptz,      -- почта подтверждена переходом по ссылке
-  phone             text,
+  email_verified_at timestamptz,      -- почта подтверждена кодом из письма
+  -- Телефон обязателен и может быть способом входа, поэтому хранится
+  -- в E.164 (+79161234567) и подтверждается отдельно
+  phone             text not null,
+  phone_verified_at timestamptz,
   full_name         text not null,
+  -- Должность, а не права: директор, бухгалтер, менеджер. Права выдаются
+  -- приглашением, а не выбором при регистрации (решение Q19.3)
+  position          text,
+  -- Совпало ли ФИО с руководителем в реестре. Это не удостоверение личности,
+  -- а проверка «заявленное не противоречит реестру»
+  position_checked_at timestamptz,
+  position_check      jsonb,
   role              text not null check (role in ('owner','staff','operator','admin')),
   is_active         boolean not null default true,
   created_at        timestamptz not null default now(),
   last_login_at     timestamptz
 );
 create unique index on platform.users (lower(email));
+-- Уникальность телефона — только среди подтверждённых. Иначе достаточно
+-- зарегистрироваться на чужой номер, чтобы настоящий владелец не смог
+create unique index on platform.users (phone) where phone_verified_at is not null;
 
 -- Способы входа отдельной таблицей, а не колонками в users. Добавить вход
 -- по телефону, через Telegram или через партнёра станет строкой нового вида,
@@ -138,15 +159,24 @@ create index on platform.outbox (type, occurred_at);
 подряд вход по паролю для этого адреса приостанавливается». Отдельного
 хранилища для счётчиков не заводим (§3).
 
+Про роли организации. Заказчик и подрядчик — **не взаимоисключающие**:
+одна и та же компания может и заказывать, и выполнять. Поэтому вместо одного
+`kind` два независимых признака. Практически это значит, что в интерфейсе
+у такой компании доступны оба набора разделов, и переключаться между ними
+человек должен явно, а не искать нужный раздел среди восьми.
+
+`is_contractor` не выдаётся при регистрации автоматически: стать подрядчиком —
+отдельное действие с проверкой ИНН и подписанием договора. Регистрация даёт
+`is_client`; «начать выполнять работы» человек включает сам, когда готов.
+
 Про организацию площадки. `users.org_id` остаётся `not null` — правило
 «у каждого человека есть компания» выполняется без исключений. Операторы
-и администраторы принадлежат организации с `kind = 'platform'`, и её же
-реквизиты берёт модуль `documents`, когда выпускает договор и счёт
-от имени площадки.
+и администраторы принадлежат организации с `is_platform`, и её же реквизиты
+берёт модуль `documents`, когда выпускает договор и счёт от имени площадки.
 
-Такая организация в системе ровно одна. Проверять это внешним ключом
-негде, поэтому проверку делает код `platform` при создании организации,
-и на неё есть тест. Сид 01-4 заводит её вместе с пользователем-оператором.
+Такая организация в системе ровно одна, и это обеспечено частичным уникальным
+индексом, а не только кодом: `unique ((true)) where is_platform` физически
+не даст создать вторую.
 
 Про `outbox`: `bigserial`, а не UUID — порядок обработки должен совпадать с порядком
 записи. Частичный индекс по `processed_at is null` держит выборку воркера быстрой
