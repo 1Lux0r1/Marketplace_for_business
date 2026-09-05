@@ -220,6 +220,8 @@
 
   --shadow-card: 0 1px 2px rgb(51 59 69 / 0.06), 0 1px 3px rgb(51 59 69 / 0.05);
   --shadow-raised: 0 12px 32px rgb(51 59 69 / 0.10);
+  /* Шторка выезжает сбоку, поэтому тень ложится влево, а не вниз */
+  --shadow-drawer: -12px 0 40px rgb(51 59 69 / 0.16);
 }
 
 @layer base {

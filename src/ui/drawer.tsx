@@ -97,7 +97,7 @@ export function Drawer({ open, onClose, title, children }: Props) {
         aria-label={title}
         className={cx(
           'relative flex h-full w-full max-w-[440px] flex-col overflow-y-auto bg-surface',
-          'shadow-[0_0_40px_rgba(0,0,0,0.18)] motion-safe:animate-[slide-in_200ms_ease-out]',
+          'shadow-drawer motion-safe:animate-[slide-in_200ms_ease-out]',
         )}
       >
         <div className="flex flex-none items-center justify-between gap-4 border-b border-line px-6 py-5">
