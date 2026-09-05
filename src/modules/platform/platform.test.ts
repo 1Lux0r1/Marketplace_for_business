@@ -353,6 +353,29 @@ describe('что лежит в базе', () => {
     expect(await db.select().from(sessions)).toHaveLength(0)
   })
 
+  it('живая сессия не открывает данные чужой организации', async () => {
+    await registerAndConfirm()
+    const { orgId: strangerOrgId } = await registerAndConfirm({
+      email: 'boris@example.ru',
+      phone: '+79161112233',
+      companyName: 'Салон «Чужой»',
+      inn: '7702345678',
+      fullName: 'Борис Петров',
+    })
+
+    const { token } = await platform.loginWithPassword({
+      login: registration.email,
+      password: registration.password,
+      remember: false,
+    })
+    const me = await platform.getSession(token)
+    expect(me?.email).toBe(registration.email)
+
+    // Сессия говорит, кто пришёл, а не что ему можно: номер чужой компании
+    // известен, но доступа не даёт
+    expect(() => platform.requireSameOrg(me!, strangerOrgId)).toThrow(PlatformError)
+  })
+
   it('отзыв доступа обрывает все сессии человека сразу', async () => {
     const { userId } = await registerAndConfirm()
     const a = await platform.loginWithPassword({

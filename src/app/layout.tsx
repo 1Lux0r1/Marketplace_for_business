@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { Nav } from './nav'
+import { AuthButtons } from './auth/auth-buttons'
+import { UserMenu } from './auth/user-menu'
+import { currentUser, currentOrgName } from '@/server/session'
 import { SearchIcon } from '@/ui/icons'
 import './globals.css'
 
@@ -14,9 +17,14 @@ export const metadata: Metadata = {
  * контентная область без боковой колонки (макеты в `design/`).
  *
  * Обращаемся к человеку, а не к юрлицу (§7): в шапке имя, а не ИНН.
- * Имя пока зашито — сессии появятся в 01-2.
+ *
+ * Кто вошёл — решается на сервере по куке: незашедший видит две кнопки,
+ * зашедший — своё имя. В браузер разметка приходит уже правильной.
  */
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const user = await currentUser()
+  const orgName = user ? await currentOrgName(user) : null
+
   return (
     <html lang="ru">
       <body className="flex min-h-screen flex-col bg-bg text-ink">
@@ -39,13 +47,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="ml-auto flex flex-none items-center gap-3">
-              <div className="hidden text-right leading-tight md:block">
-                <div className="text-table font-bold">Анна Ковалёва</div>
-                <div className="text-caption text-ink-3">Кофейня «Пример» · Пятницкая, 41</div>
-              </div>
-              <div className="flex size-9.5 items-center justify-center rounded-full bg-accent text-table font-extrabold text-on-accent">
-                АК
-              </div>
+              {user ? (
+                <UserMenu fullName={user.fullName} orgName={orgName ?? ''} />
+              ) : (
+                <AuthButtons />
+              )}
             </div>
           </div>
           <Nav />

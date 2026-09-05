@@ -189,6 +189,18 @@
   .num {
     font-variant-numeric: tabular-nums;
   }
+  /* Движение только чтобы объяснить, откуда взялся элемент (§7.7) */
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes slide-in {
+    from {
+      transform: translateX(16px);
+      opacity: 0;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
