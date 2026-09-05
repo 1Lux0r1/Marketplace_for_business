@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <header className="flex-none border-b border-line bg-surface">
           <div className="flex h-[68px] items-center gap-4 px-4 md:gap-7 md:px-10">
             <div className="flex flex-none items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-[10px] bg-accent text-lead font-extrabold text-on-accent">
+              <div className="flex size-8 items-center justify-center rounded-control bg-accent text-lead font-extrabold text-on-accent">
                 М
               </div>
               {/* На узком экране остаётся только знак: строка целиком не помещается
@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </span>
             </div>
 
-            <div className="flex h-11 min-w-0 max-w-[620px] flex-1 items-center gap-3 rounded-pill border border-line bg-surface-2 px-4 text-ink-3">
+            <div className="flex h-11 min-w-0 max-w-[620px] flex-1 items-center gap-3 rounded-pill border border-line-strong bg-surface-2 px-4 text-ink-3">
               <SearchIcon size={19} />
               <span className="truncate text-body">Что нужно сделать на точке?</span>
             </div>

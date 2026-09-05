@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
  */
 export function PromoTag({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-[7px] bg-promo px-2.5 py-1 text-caption font-extrabold text-on-promo">
+    <span className="inline-flex items-center rounded-control bg-promo px-2.5 py-1 text-caption font-extrabold text-on-promo">
       {children}
     </span>
   )
