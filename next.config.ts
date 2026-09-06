@@ -26,7 +26,7 @@ const demoBasePath = process.env.DEMO_BASE_PATH ?? '/Marketplace_for_business'
  * Подмена именно после разрешения пути: обычный alias здесь не работает,
  * потому что `@/` разбирает свой обработчик Next, и до alias дело не доходит.
  */
-const DEMO_STUBBED = /[\\/]server[\\/](auth-actions|session|catalog-actions|catalog-queries)$/
+const DEMO_STUBBED = /[\\/]server[\\/](auth-actions|session|catalog-actions|catalog-queries|storefront-queries)$/
 
 type WebpackConfig = { plugins: unknown[] }
 type WebpackContext = {
