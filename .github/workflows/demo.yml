@@ -1,40 +1,129 @@
-name: Демо на GitHub Pages
+name: Проверки и демо
 
-# Демо — временная замена боевому серверу: место, куда можно посмотреть
-# и что можно показать, пока VPS не куплен (вопрос 1 в docs/decisions-page.html).
-# Собирается из ветки разработки при каждом изменении интерфейса.
+# Два назначения, и они разведены по задачам ниже.
+#
+# «Проверки» идут на каждой ветке: над проектом работают два агента, и каждый
+# должен видеть красное или зелёное по своей работе, не дожидаясь слияния.
+# «Демо» собирается и выкладывается только из основной ветки — это временная
+# замена боевому серверу, место, куда можно посмотреть и что можно показать,
+# пока VPS не куплен (вопрос 1 в docs/decisions-page.html).
 #
 # ВАЖНО: перед первым запуском включить Pages в настройках репозитория:
 # Settings → Pages → Source: GitHub Actions.
 
 on:
   push:
-    # Ветку разработки перечислять поимённо нельзя: у каждой задачи она своя,
-    # и список молча устаревает — правки интерфейса перестают проходить проверки,
-    # а красного цвета при этом никто не видит. Шаблон переживает смену ветки.
-    branches: [main, 'claude/**']
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
-      - 'next.config.ts'
-      - 'postcss.config.mjs'
-      - '.github/workflows/demo.yml'
+    # Список того, что НЕ запускает проверки, вместо списка того, что запускает.
+    # Разница принципиальная: при белом списке новый файл молча остаётся без
+    # проверок, и ошибка всплывает после слияния. При чёрном — наоборот,
+    # по умолчанию проверяется всё, а не проверяется только заведомо неопасное.
+    paths-ignore:
+      - 'docs/**'
+      - 'design/**'
+      - 'deploy/**'
+      - 'prompts/**'
+      - '**/*.md'
+  # Пул-реквест проверяется отдельно от ветки, и это не дубль: здесь GitHub
+  # собирает ветку, ВЛИТУЮ в основную. Именно там ломается работа вдвоём —
+  # ветка зелёная сама по себе, но основная за это время ушла вперёд.
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'design/**'
+      - 'deploy/**'
+      - 'prompts/**'
+      - '**/*.md'
   workflow_dispatch:
 
+# По умолчанию — только чтение. Право писать в Pages выдаётся одной задаче
+# из трёх, и только ей: пул-реквест запускает проверки, а запускать его может
+# кто угодно.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
-# Одна выкладка за раз: новая отменяет предыдущую, чтобы демо не отставало
+# Группа своя у каждой ветки. Раньше она была общая на весь репозиторий,
+# и запуск одного агента отменял запуск другого: каждый видел «сборка
+# отменена» вместо своего результата.
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  checks:
+    name: Проверки
     runs-on: ubuntu-latest
+
+    # Тестам нужна настоящая база: права доступа, переходы статусов и журнал
+    # писем проверяются запросами, а не заглушками. Без неё тесты не «пропускались»,
+    # а падали на разборе окружения, и вместе с ними падало демо.
+    #
+    # Не отключать и не помечать такие тесты пропущенными: падающий тест —
+    # это сигнал (§9.6). Дешевле дать сборке базу, чем ослепить проверку.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: marketplace_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Зависимости
+        run: pnpm install --frozen-lockfile
+
+      # База одноразовая и живёт минуту, но секрет всё равно генерируется,
+      # а не лежит в файле: заведомо фиктивное значение в репозитории со
+      # временем начинают копировать в настоящие окружения.
+      - name: Окружение для тестов
+        run: |
+          {
+            echo "NODE_ENV=test"
+            echo "APP_URL=http://localhost:3000"
+            echo "APP_NAME=marketplace-for-business"
+            echo "SESSION_SECRET=$(openssl rand -base64 48)"
+            echo "DATABASE_URL=postgres://ci:ci@localhost:5432/marketplace_test"
+            echo "DATABASE_URL_TEST=postgres://ci:ci@localhost:5432/marketplace_test"
+          } >> "$GITHUB_ENV"
+
+      # Схема создаётся миграциями, а не дампом: так сборка заодно проверяет,
+      # что миграции накатываются на пустую базу. Сломанную миграцию иначе
+      # видно только на деплое.
+      - name: Миграции
+        run: pnpm db:migrate
+
+      - name: Типы, линтер, тесты
+        run: pnpm typecheck && pnpm lint && pnpm test
+
+  demo:
+    name: Сборка демо
+    needs: checks
+    # Только основная ветка. GitHub по умолчанию запрещает выкладку из рабочих
+    # веток, и это разумно: демо должно показывать то, что принято, а не то,
+    # что кто-то из двоих сейчас пробует.
+    if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
     outputs:
       pages_enabled: ${{ steps.pages.outputs.enabled }}
     steps:
@@ -52,11 +141,6 @@ jobs:
       - name: Зависимости
         run: pnpm install --frozen-lockfile
 
-      # Демо не выкладывается, если проверки не прошли: сломанное демо
-      # хуже отсутствующего — по нему принимают решения
-      - name: Проверки
-        run: pnpm typecheck && pnpm lint && pnpm test
-
       - name: Сборка
         env:
           DEMO_EXPORT: '1'
@@ -71,15 +155,9 @@ jobs:
       - name: Отключить Jekyll
         run: touch out/.nojekyll
 
-      # Выкладка возможна только при двух условиях, и оба проверяются здесь,
+      # Pages включается галочкой в настройках, из кода нельзя. Проверяем здесь,
       # а не в задаче выкладки: та объявляет окружение github-pages и падает
-      # ещё до первого шага, если условие не выполнено, — тогда никакая проверка
-      # внутри неё выполниться уже не успеет.
-      #
-      # 1. Pages включён в настройках репозитория (галочкой, из кода нельзя).
-      # 2. Ветка — основная. GitHub по умолчанию запрещает выкладку из рабочих
-      #    веток, и это разумно: демо должно показывать то, что принято, а не
-      #    то, что кто-то сейчас пробует.
+      # ещё до первого шага, если условие не выполнено.
       - name: Можно ли выкладывать
         id: pages
         env:
@@ -89,9 +167,10 @@ jobs:
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/${{ github.repository }}/pages")
-          default_branch="${{ github.event.repository.default_branch }}"
 
-          if [ "$code" != "200" ]; then
+          if [ "$code" = "200" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::warning title=Демо собрано, но не выложено::GitHub Pages не включён"
             {
@@ -102,19 +181,6 @@ jobs:
               echo
               echo "**Что сделать один раз:** Settings → Pages → Source → GitHub Actions."
             } >> "$GITHUB_STEP_SUMMARY"
-          elif [ "$GITHUB_REF" != "refs/heads/$default_branch" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            {
-              echo "## Демо собрано, выложится после слияния"
-              echo
-              echo "Все проверки прошли и демо собралось. Выкладывается оно только"
-              echo "из ветки \`$default_branch\` — так демо показывает принятое,"
-              echo "а не то, что сейчас в работе."
-              echo
-              echo "Как только эта ветка будет влита, демо обновится само."
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/upload-pages-artifact@v3
@@ -122,12 +188,21 @@ jobs:
           path: out
 
   deploy:
-    needs: build
-    # Пропускаем целиком, если выкладка невозможна. Пропущенная задача
+    name: Выкладка
+    needs: demo
+    # Пропускаем целиком, если выкладывать некуда. Пропущенная задача
     # не красит пул-реквест в красное, а упавшая — красит, и тогда красный
     # цвет перестаёт значить «что-то сломано».
-    if: needs.build.outputs.pages_enabled == 'true'
+    if: needs.demo.outputs.pages_enabled == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    # Своя группа, и отменять её нельзя: выкладка на Pages идёт по одной,
+    # а прерванная на середине оставляет сайт в непонятном состоянии.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
