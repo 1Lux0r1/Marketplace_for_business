@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatKopecks, commissionKopecks, payoutKopecks } from './money'
+import { formatKopecks, commissionKopecks, payoutKopecks, parseRublesToKopecks, kopecksToInput } from './money'
 
 /** Денежные расчёты — обязательный тест (§8 CLAUDE.md). */
 
@@ -47,5 +47,47 @@ describe('commissionKopecks', () => {
     expect(() => commissionKopecks(100n, 0)).toThrow(RangeError)
     expect(() => commissionKopecks(100n, 1)).toThrow(RangeError)
     expect(() => commissionKopecks(100n, 13)).toThrow(RangeError)
+  })
+})
+
+describe('parseRublesToKopecks', () => {
+  it('целые рубли превращает в копейки', () => {
+    expect(parseRublesToKopecks('5400')).toBe(540_000n)
+  })
+
+  it('понимает и запятую, и точку', () => {
+    expect(parseRublesToKopecks('5400,50')).toBe(540_050n)
+    expect(parseRublesToKopecks('5400.50')).toBe(540_050n)
+  })
+
+  it('один разряд после запятой — это десятки копеек, а не единицы', () => {
+    expect(parseRublesToKopecks('5,5')).toBe(550n)
+  })
+
+  it('терпит пробелы, в том числе из вставленной суммы', () => {
+    expect(parseRublesToKopecks('5 400')).toBe(540_000n)
+    expect(parseRublesToKopecks('5 400,50')).toBe(540_050n)
+  })
+
+  it('пустое поле — это не ноль, а «не введено»', () => {
+    expect(parseRublesToKopecks('')).toBeNull()
+    expect(parseRublesToKopecks('   ')).toBeNull()
+  })
+
+  it('не делает вид, что понял кривой ввод', () => {
+    for (const bad of ['abc', '5400,505', '-100', '5,4,3', '1e5', '₽500', '5..5']) {
+      expect(parseRublesToKopecks(bad), `«${bad}» разобрался, хотя не должен`).toBeUndefined()
+    }
+  })
+
+  it('большая сумма не теряет точности: копейки — bigint, а не число', () => {
+    expect(parseRublesToKopecks('99999999999,99')).toBe(9_999_999_999_999n)
+  })
+
+  it('обратно в поле возвращается то же самое', () => {
+    for (const text of ['5400', '5400,50', '0', '0,05']) {
+      const kopecks = parseRublesToKopecks(text)
+      expect(kopecksToInput(kopecks as bigint)).toBe(text)
+    }
   })
 })
