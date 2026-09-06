@@ -12,12 +12,13 @@
     "start": "next start",
     "worker": "tsx --env-file-if-exists=.env src/worker/index.ts",
     "db:generate": "node --env-file-if-exists=.env node_modules/drizzle-kit/bin.cjs generate",
+    "db:create": "node --env-file-if-exists=.env scripts/db-create.mjs",
     "db:migrate": "tsx --env-file-if-exists=.env src/db/migrate.ts",
     "db:seed": "tsx --env-file-if-exists=.env src/db/seed.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "demo:build": "DEMO_EXPORT=1 next build"
+    "demo:build": "node scripts/demo-build.mjs"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

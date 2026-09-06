@@ -62,8 +62,9 @@ export default tseslint.config(
     name: 'project/base',
     languageOptions: {
       parserOptions: {
-        // Конфиги в .mjs не входят в tsconfig — разбираем их без типовой информации
-        projectService: { allowDefaultProject: ['*.mjs', '*.js'] },
+        // Конфиги и вспомогательные скрипты в .mjs не входят в tsconfig —
+        // разбираем их без типовой информации
+        projectService: { allowDefaultProject: ['*.mjs', '*.js', 'scripts/*.mjs'] },
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -86,7 +87,16 @@ export default tseslint.config(
   },
   {
     name: 'project/scripts',
-    files: ['src/db/*.ts', 'src/worker/**/*.ts', '*.config.ts', 'eslint.config.mjs'],
+    files: [
+      'src/db/*.ts',
+      'src/worker/**/*.ts',
+      'scripts/*.mjs',
+      '*.config.ts',
+      'eslint.config.mjs',
+    ],
+    // Печатать в консоль — вся работа этих файлов, и запускает их Node,
+    // а не браузер: у него свой набор глобальных имён
+    languageOptions: { globals: { console: 'readonly', process: 'readonly' } },
     rules: { 'no-console': 'off' },
   },
   moduleBoundaries,
