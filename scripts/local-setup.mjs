@@ -1,17 +1,18 @@
 /**
- * Первая настройка на своей машине: подготовить `.env`, создать базы,
- * накатить структуру.
+ * Первая настройка на своей машине: подготовить `.env`, найти базу,
+ * создать её и накатить структуру.
  *
- * Пишется отдельным скриптом, а не строчками в bat-файле, по двум причинам:
- * его можно проверить на любой системе, и он объясняет по-человечески, что
- * пошло не так, — а bat-файл в такой же ситуации показывает код ошибки.
+ * Задача этого файла — чтобы человеку не пришлось ничего править руками.
+ * Поэтому база ищется сама: имя модуля и пароль в разных установках разные,
+ * а знать их наизусть человек не обязан.
  *
- * Повторный запуск безопасен: готовый `.env` не переписывается, существующие
- * базы не трогаются, уже накатанные изменения структуры не повторяются.
+ * Повторный запуск безопасен: рабочие настройки не переписываются,
+ * существующие базы не трогаются.
  */
 import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { findDatabase, canConnect } from './db-find.mjs'
 
 const NODE_MINIMUM = 22
 
@@ -20,55 +21,66 @@ const major = Number(process.versions.node.split('.')[0])
 if (major < NODE_MINIMUM) {
   fail(
     `Нужен Node.js ${NODE_MINIMUM} или новее, а установлен ${process.versions.node}.`,
-    'Скачать: https://nodejs.org — берите версию LTS.',
+    'Скачайте с https://nodejs.org — кнопка LTS.',
   )
 }
 console.log(`  Node.js ${process.versions.node} — подходит`)
 
-step('Проверяю файл настроек .env')
-if (existsSync('.env')) {
-  console.log('  Файл уже есть — оставляю как есть')
-} else {
-  if (!existsSync('.env.example')) fail('Не нашёл .env.example — видимо, репозиторий скачан не целиком.')
+step('Готовлю файл настроек')
+if (!existsSync('.env')) {
+  if (!existsSync('.env.example')) {
+    fail('Не нашёл файл .env.example — видимо, папка проекта скачана не целиком.')
+  }
   copyFileSync('.env.example', '.env')
-
-  let env = readFileSync('.env', 'utf8')
   // Ключ подписи сессий: без него приложение не стартует, а придумывать
   // его руками человек не должен
-  env = env.replace(/^SESSION_SECRET=.*$/mu, `SESSION_SECRET=${randomBytes(48).toString('base64')}`)
-  env = env.replace(
-    /^DATABASE_URL=.*$/mu,
-    'DATABASE_URL=postgres://postgres:postgres@localhost:5432/marketplace',
-  )
-  env = env.replace(
-    /^DATABASE_URL_TEST=.*$/mu,
-    'DATABASE_URL_TEST=postgres://postgres:postgres@localhost:5432/marketplace_test',
-  )
-  writeFileSync('.env', env)
+  patchEnv({ SESSION_SECRET: randomBytes(48).toString('base64') })
+  console.log('  Создал .env и сгенерировал ключ подписи')
+} else {
+  console.log('  Файл уже есть')
+}
 
-  console.log('  Создал .env: ключ подписи сгенерировал, адрес базы поставил обычный для своей машины')
-  console.log('  Если у вашей базы другой логин или пароль — поправьте в .env строки DATABASE_URL')
+step('Ищу базу данных')
+const current = readEnv()
+if (await canConnect(current.DATABASE_URL)) {
+  console.log('  Настройки из .env подходят — оставляю как есть')
+} else {
+  console.log('  Перебираю обычные варианты, это несколько секунд...')
+  const found = await findDatabase()
+  if (!found) {
+    fail(
+      'База не отвечает ни по одному из обычных адресов.',
+      '',
+      'Что проверить:',
+      '  1. В панели включён и запущен модуль PostgreSQL.',
+      '  2. Версия модуля — 16 или новее.',
+      '',
+      'Включите модуль и запустите этот файл ещё раз.',
+    )
+  }
+  const auth = `postgres${found.password ? `:${found.password}` : ''}@${found.host}:5432`
+  patchEnv({
+    DATABASE_URL: `postgres://${auth}/marketplace`,
+    DATABASE_URL_TEST: `postgres://${auth}/marketplace_test`,
+  })
+  console.log(`  Нашёл базу: ${found.host} — записал в настройки`)
 }
 
 step('Создаю базы, если их ещё нет')
-run('node', ['--env-file-if-exists=.env', 'scripts/db-create.mjs'], [
-  'Что делать — написано выше. Поправьте .env и запустите этот файл снова:',
-  'повторный запуск ничего не сломает.',
-])
+run('node', ['--env-file-if-exists=.env', 'scripts/db-create.mjs'])
 
-step('Накатываю структуру базы')
-run('node', ['--env-file-if-exists=.env', '--import', 'tsx', 'src/db/migrate.ts'], [
-  'Структура не накатилась. Полный текст ошибки — выше.',
-])
+step('Создаю таблицы')
+run('node', ['--env-file-if-exists=.env', '--import', 'tsx', 'src/db/migrate.ts'])
 
 console.log(`
-Готово. Дальше:
+=====================================================
+  Готово. Теперь запустите файл start.bat
+=====================================================
 
-  pnpm build     собрать приложение (нужно один раз после каждого обновления)
-  pnpm start     запустить — откроется на http://localhost:3000
+Он соберёт приложение и откроет его на http://localhost:3000
 
-Письма никуда не уходят: они пишутся в окно, где запущено приложение,
-и код подтверждения виден там же. Это ожидаемо, см. docs/13-local-server.md.`)
+Письма никуда не отправляются: они печатаются в том же окне,
+и код подтверждения при регистрации виден там же.`)
 
 // ─── Мелочи ─────────────────────────────────────────────────────────────
 
@@ -76,13 +88,37 @@ function step(title) {
   console.log(`\n${title}...`)
 }
 
-function run(command, args, hints) {
+function readEnv() {
+  const values = {}
+  for (const line of readFileSync('.env', 'utf8').split('\n')) {
+    const match = /^([A-Z0-9_]+)=(.*)$/u.exec(line.trim())
+    if (match) values[match[1]] = match[2].trim()
+  }
+  return values
+}
+
+/** Переписать значения в .env, сохранив всё остальное — включая комментарии. */
+function patchEnv(values) {
+  let text = readFileSync('.env', 'utf8')
+  for (const [key, value] of Object.entries(values)) {
+    const line = `${key}=${value}`
+    const pattern = new RegExp(`^${key}=.*$`, 'mu')
+    text = pattern.test(text) ? text.replace(pattern, line) : `${text}\n${line}\n`
+  }
+  writeFileSync('.env', text)
+}
+
+function run(command, args) {
   const result = spawnSync(command, args, { stdio: 'inherit', shell: process.platform === 'win32' })
-  if (result.status !== 0) fail(...hints)
+  if (result.status !== 0) {
+    fail('Полный текст ошибки — выше.', 'Если непонятно, что он означает, пришлите его мне целиком.')
+  }
 }
 
 function fail(...lines) {
-  console.error(`\nНе получилось.\n`)
+  console.error('\n=====================================================')
+  console.error('  Не получилось')
+  console.error('=====================================================\n')
   for (const line of lines) console.error(line)
   process.exit(1)
 }

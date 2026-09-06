@@ -1,23 +1,52 @@
 @echo off
-rem First run on a local Windows machine: dependencies, .env, databases, schema.
-rem Safe to run again: it does not overwrite .env and does not drop anything.
-rem Step-by-step guide (in Russian): docs\13-local-server.md
+rem Kодировка: без chcp консоль Windows покажет вместо русских букв мусор.
+rem Файл сохранён в UTF-8 без BOM — с BOM cmd спотыкается на первой строке.
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0..\.."
 
-where pnpm >nul 2>nul
+echo.
+echo   Настройка маркетплейса. Это займёт несколько минут.
+echo.
+
+where node >nul 2>nul
 if errorlevel 1 (
+  echo   ------------------------------------------------
+  echo   На компьютере нет Node.js — без него не запустить.
   echo.
-  echo pnpm not found.
-  echo Install Node.js 22+ from nodejs.org, then run: npm install -g pnpm
+  echo   Откройте сайт  nodejs.org
+  echo   Скачайте версию LTS, установите
+  echo   и запустите этот файл снова.
+  echo   ------------------------------------------------
+  echo.
+  pause
   exit /b 1
 )
 
+where pnpm >nul 2>nul
+if errorlevel 1 (
+  echo   Ставлю pnpm...
+  call npm install -g pnpm
+  if errorlevel 1 (
+    echo.
+    echo   Не получилось поставить pnpm. Пришлите текст выше.
+    pause
+    exit /b 1
+  )
+)
+
 call pnpm install
-if errorlevel 1 exit /b 1
+if errorlevel 1 (
+  echo.
+  echo   Не получилось поставить библиотеки. Пришлите текст выше.
+  pause
+  exit /b 1
+)
 
 call node scripts\local-setup.mjs
-if errorlevel 1 exit /b 1
+if errorlevel 1 (
+  pause
+  exit /b 1
+)
 
-echo.
-echo Next: run start.bat
+pause
