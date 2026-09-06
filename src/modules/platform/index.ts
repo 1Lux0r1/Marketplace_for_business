@@ -1,5 +1,6 @@
 import { getDb } from '@/shared/db'
 import * as auth from './auth'
+import * as outbox from './outbox'
 import * as service from './service'
 import { errors } from './errors'
 import type { LegalForm, Org, Role, User } from './types'
@@ -38,6 +39,20 @@ export const findUserByEmail = service.findUserByEmail
 export const hasRole = service.hasRole
 export const requireRole = service.requireRole
 export const requireSameOrg = service.requireSameOrg
+
+// ─── Очередь событий ────────────────────────────────────────────────────
+
+/**
+ * Событие публикуется в ту же транзакцию, в которой менялись данные (§5).
+ * Кто на него подписан — не забота публикующего модуля.
+ */
+export const publish = outbox.publish
+export const claimOutboxBatch = outbox.claimBatch
+export const markOutboxProcessed = outbox.markProcessed
+export const markOutboxFailed = outbox.markFailed
+export const outboxStats = outbox.outboxStats
+export const OUTBOX_MAX_ATTEMPTS = outbox.MAX_ATTEMPTS
+export type { OutboxEvent, PublishInput } from './outbox'
 
 // ─── Регистрация ────────────────────────────────────────────────────────
 
@@ -100,6 +115,19 @@ export async function register(
 
     await auth.setPassword(user.id, input.password, tx)
     const emailCode = await auth.issueCode(user.email, 'verify_email', tx)
+
+    // Событие пишется в ту же транзакцию (§5): регистрация либо случилась
+    // целиком вместе с записью о ней, либо не случилась вовсе.
+    //
+    // Кода подтверждения здесь намеренно нет: содержимое события лежит
+    // в базе открытым текстом, а код — это вход в учётную запись.
+    // Письмо с кодом уходит из обработчика запроса, а не отсюда.
+    await outbox.publish(tx, {
+      type: 'user.registered',
+      aggregate: 'org',
+      aggregateId: org.id,
+      payload: { orgId: org.id, userId: user.id, legalForm: input.legalForm },
+    })
 
     return { userId: user.id, orgId: org.id, emailCode }
   })

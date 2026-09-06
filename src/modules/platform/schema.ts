@@ -183,3 +183,39 @@ export const loginAttempts = platform.table(
     index('login_attempts_ip_idx').on(t.ip, t.at.desc()),
   ],
 )
+
+/**
+ * Очередь событий. Изменение данных и запись события — одна транзакция (§5),
+ * поэтому «сделка принята» и «письмо подрядчику» не могут разойтись: либо
+ * записано и то, и другое, либо ничего.
+ *
+ * `bigserial`, а не UUID: порядок обработки должен совпадать с порядком записи.
+ *
+ * `available_at` — раньше этого момента событие не берут. Через него сделаны
+ * задержки между повторами: сразу после неудачи запись не должна попадать
+ * в следующую же выборку, иначе десять попыток сгорят за одну секунду.
+ */
+export const outbox = platform.table(
+  'outbox',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    type: text('type').notNull(),
+    aggregate: text('aggregate').notNull(),
+    aggregateId: uuid('aggregate_id').notNull(),
+    payload: jsonb('payload').notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+    availableAt: timestamp('available_at', { withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp('processed_at', { withTimezone: true }),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+  },
+  (t) => [
+    // Частичный индекс держит выборку воркера быстрой даже когда
+    // в таблице миллионы обработанных строк
+    index('outbox_pending_idx')
+      .on(t.availableAt, t.id)
+      .where(sql`${t.processedAt} is null`),
+    index('outbox_aggregate_idx').on(t.aggregate, t.aggregateId),
+    index('outbox_type_idx').on(t.type, t.occurredAt),
+  ],
+)

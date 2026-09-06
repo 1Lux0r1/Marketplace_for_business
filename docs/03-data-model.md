@@ -131,11 +131,12 @@ create table platform.outbox (
   aggregate_id  uuid not null,
   payload       jsonb not null,
   occurred_at   timestamptz not null default now(),
+  available_at  timestamptz not null default now(),
   processed_at  timestamptz,
   attempts      int not null default 0,
   last_error    text
 );
-create index on platform.outbox (processed_at, id) where processed_at is null;
+create index on platform.outbox (available_at, id) where processed_at is null;
 create index on platform.outbox (aggregate, aggregate_id);
 create index on platform.outbox (type, occurred_at);
 ```
@@ -181,6 +182,17 @@ create index on platform.outbox (type, occurred_at);
 Про `outbox`: `bigserial`, а не UUID — порядок обработки должен совпадать с порядком
 записи. Частичный индекс по `processed_at is null` держит выборку воркера быстрой
 даже когда в таблице миллионы обработанных строк.
+
+`available_at` добавлен при разработке 01-3: без него нечем сделать растущие
+паузы между повторами, и десять попыток сгорали бы за одну секунду. Он же
+чинит второй случай — воркер, упавший посреди обработки: взятое событие
+получает отодвинутый срок и возвращается само, а не запирает очередь до
+перезапуска.
+
+**В payload не кладутся секреты.** Событие лежит в базе открытым текстом,
+поэтому коды подтверждения и ссылки входа туда не попадают — такие письма
+уходят прямо из обработчика запроса. Это то же правило, что и в журнале
+доставки писем.
 
 ## schema `catalog`
 
