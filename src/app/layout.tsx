@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               )}
             </div>
           </div>
-          <Nav />
+          <Nav isOperator={user ? user.role === 'operator' || user.role === 'admin' : false} />
         </header>
 
         <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-8 pb-11 md:px-10">{children}</main>

@@ -24,6 +24,7 @@ export type { PlatformErrorCode } from './errors'
 
 export const getOrg = service.getOrg
 export const createOrg = service.createOrg
+export const findOrgByInn = service.findOrgByInn
 export const getPlatformOrg = service.getPlatformOrg
 
 /** Включить роль подрядчика: отдельное действие, а не флажок при регистрации. */
