@@ -11,7 +11,7 @@ export function currentUser(): Promise<platform.User | null> {
   return Promise.resolve(null)
 }
 
-export function currentOrgName(): Promise<string | null> {
+export function currentOrg(): Promise<platform.Org | null> {
   return Promise.resolve(null)
 }
 

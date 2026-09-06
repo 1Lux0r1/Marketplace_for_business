@@ -3,7 +3,8 @@ import type { ReactNode } from 'react'
 import { Nav } from './nav'
 import { AuthButtons } from './auth/auth-buttons'
 import { UserMenu } from './auth/user-menu'
-import { currentUser, currentOrgName } from '@/server/session'
+import { currentUser, currentOrg } from '@/server/session'
+import { sectionsFor } from './sections'
 import { SearchIcon } from '@/ui/icons'
 import './globals.css'
 
@@ -23,7 +24,10 @@ export const metadata: Metadata = {
  */
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser()
-  const orgName = user ? await currentOrgName(user) : null
+  const org = user ? await currentOrg(user) : null
+  // Меню собирается из ролей компании, а не зашито: одна компания может
+  // и заказывать, и выполнять (§7.1, `sections.ts`)
+  const sections = sectionsFor(org, user)
 
   return (
     <html lang="ru">
@@ -48,13 +52,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
             <div className="ml-auto flex flex-none items-center gap-3">
               {user ? (
-                <UserMenu fullName={user.fullName} orgName={orgName ?? ''} />
+                <UserMenu fullName={user.fullName} orgName={org?.name ?? ''} />
               ) : (
                 <AuthButtons />
               )}
             </div>
           </div>
-          <Nav />
+          <Nav sections={sections} />
         </header>
 
         <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 pt-8 pb-11 md:px-10">{children}</main>

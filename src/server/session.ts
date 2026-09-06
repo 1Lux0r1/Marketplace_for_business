@@ -52,11 +52,14 @@ export async function endSession(): Promise<void> {
   store.delete(COOKIE)
 }
 
-/** Название компании для шапки. Отдельным запросом: в сессии его нет. */
-export async function currentOrgName(user: platform.User): Promise<string | null> {
+/**
+ * Компания вошедшего. Нужна не только для названия в шапке: из её ролей
+ * («заказывает», «выполняет», «сотрудник площадки») собирается меню разделов —
+ * см. `src/app/sections.ts`.
+ */
+export async function currentOrg(user: platform.User): Promise<platform.Org | null> {
   try {
-    const org = await platform.getOrg(user.orgId)
-    return org.name
+    return await platform.getOrg(user.orgId)
   } catch {
     // Шапка не должна падать из-за компании: имя человека важнее
     return null
