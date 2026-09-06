@@ -1,16 +1,30 @@
 import 'server-only'
 import { cookies } from 'next/headers'
+import { config } from '@/shared/config'
 import * as platform from '@/modules/platform'
 
 /**
- * Сессия в куке. Кука недоступна скриптам на странице (`httpOnly`), не уходит
- * на чужие сайты (`sameSite`) и по-настоящему шифруется на боевом сервере
- * (`secure`): в разработке `https` нет, и с этим флагом вход бы не работал.
+ * Сессия в куке. Кука недоступна скриптам на странице (`httpOnly`) и не уходит
+ * на чужие сайты (`sameSite`).
  *
  * Права всё равно проверяются на сервере в каждой команде (§6): кука говорит,
  * кто пришёл, а не что ему можно.
  */
 const COOKIE = 'session'
+
+/**
+ * Куку с признаком `secure` браузер отдаёт только по `https`. Смотрим на адрес,
+ * по которому открывают приложение, а не на режим сборки: собранное приложение
+ * на своей машине открывают по `http`, и по режиму сборки вход там молча
+ * ломался бы — браузер просто не сохранял бы куку.
+ *
+ * Исключение делает сам браузер: на `localhost` такая кука работает и по `http`.
+ * Поэтому ломалось бы не сразу, а только на своём домене вроде
+ * `marketplace.local` — то есть в самом неудобном месте.
+ */
+function secureCookie(): boolean {
+  return config().APP_URL.startsWith('https://')
+}
 
 export async function currentUser(): Promise<platform.User | null> {
   const token = (await cookies()).get(COOKIE)?.value
@@ -23,7 +37,7 @@ export async function startSession(token: string, remember: boolean): Promise<vo
   store.set(COOKIE, token, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: secureCookie(),
     path: '/',
     // Без галочки «запомнить» кука живёт до закрытия браузера: на чужом
     // компьютере это разница между «вышел» и «оставил доступ»
