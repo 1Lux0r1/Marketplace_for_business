@@ -19,15 +19,20 @@ const sections = [
   { href: '/company', label: 'Компания', Icon: BuildingIcon, count: 0 },
 ] as const
 
-export function Nav() {
+export function Nav({ isOperator = false }: { isOperator?: boolean }) {
   const pathname = usePathname()
+  // У оператора свой набор разделов (§7.1). Пока их два: подрядчики
+  // и то, что уже было, — остальное появится вместе с очередью и спорами
+  const visible = isOperator
+    ? [...sections, { href: '/operator/contractors', label: 'Подрядчики', Icon: BuildingIcon, count: 0 }]
+    : sections
 
   return (
     <nav
       aria-label="Основные разделы"
       className="flex items-center gap-6 overflow-x-auto border-t border-line px-4 md:gap-9 md:px-10"
     >
-      {sections.map(({ href, label, Icon, count }) => {
+      {visible.map(({ href, label, Icon, count }) => {
         const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
