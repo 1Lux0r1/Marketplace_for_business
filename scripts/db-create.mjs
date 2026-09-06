@@ -66,8 +66,14 @@ for (const [name, url, purpose] of targets) {
 }
 
 if (failed) {
-  console.error('\nБазы созданы не все. Проверьте, что PostgreSQL запущен,')
-  console.error('а логин и пароль в .env совпадают с теми, что у сервера базы.')
+  console.error(`
+Базы созданы не все. Проверьте по порядку:
+
+  1. Сервер базы запущен.
+  2. Логин и пароль в .env совпадают с теми, что у сервера базы.
+  3. Если база из Open Server Panel 6 — в адресе должно стоять имя модуля,
+     а не localhost: postgres://postgres@PostgreSQL-16:5432/marketplace
+     Точное имя и версию показывает сама панель в списке модулей.`)
   process.exit(1)
 }
 
