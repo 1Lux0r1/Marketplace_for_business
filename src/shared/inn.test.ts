@@ -48,4 +48,39 @@ describe('ИНН', () => {
     expect(checkInn('').ok).toBe(false)
     expect(checkInn('   ').ok).toBe(false)
   })
+
+  it('различает номер организации и номер человека, когда вид известен', () => {
+    // Юрлицо, вводящее личный ИНН директора: номер верный, но принадлежит
+    // человеку. Без этой сверки договор и счёт выпустились бы не на то лицо
+    expect(checkInn('7701234560', 'company').ok).toBe(true)
+    expect(checkInn('770123456703', 'person').ok).toBe(true)
+
+    const personAsCompany = checkInn('770123456703', 'company')
+    expect(personAsCompany.ok).toBe(false)
+    if (!personAsCompany.ok) expect(personAsCompany.error).toContain('десяти')
+
+    const companyAsPerson = checkInn('7701234560', 'person')
+    expect(companyAsPerson.ok).toBe(false)
+    if (!companyAsPerson.ok) expect(companyAsPerson.error).toContain('двенадцати')
+  })
+
+  it('на настоящих номерах алгоритм сходится', () => {
+    // Реальные ИНН крупных организаций: проверяем алгоритм, а не эти компании
+    for (const inn of ['7707083893', '7728168971', '7710140679']) {
+      expect(checkInn(inn).ok, inn).toBe(true)
+    }
+    // Классический пример двенадцатизначного из методики
+    expect(checkInn('500100732259').ok).toBe(true)
+  })
+
+  it('тексты написаны для человека (§7.4)', () => {
+    for (const input of ['', 'не-инн-вообще', '12345', '7701234561']) {
+      const result = checkInn(input)
+      expect(result.ok, input).toBe(false)
+      if (!result.ok) {
+        expect(result.error.length, input).toBeGreaterThan(10)
+        expect(result.error.toLowerCase(), input).not.toContain('ошибка')
+      }
+    }
+  })
 })

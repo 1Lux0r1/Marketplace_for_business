@@ -27,6 +27,16 @@ const EMAILS_WINDOW_MINUTES = 15
 const EMAILS_PER_IP = 10
 const EMAILS_IP_WINDOW_MINUTES = 60
 
+/**
+ * Письма с кодом (регистрация и повторная отправка) считаются отдельно
+ * от писем со ссылкой входа. Иначе одно съедало бы бюджет другого: человек,
+ * который зарегистрировался и тут же попросил ссылку, упирался бы в отказ.
+ */
+const CODES_PER_ADDRESS = 3
+const CODES_WINDOW_MINUTES = 15
+const CODES_PER_IP = 10
+const CODES_IP_WINDOW_MINUTES = 60
+
 const PASSWORD_FAILURES_BEFORE_PAUSE = 5
 const PASSWORD_FAILURE_WINDOW_MINUTES = 60
 
@@ -93,6 +103,31 @@ export async function assertCanSendEmail(email: string, ip?: string): Promise<vo
       sinceMinutes: EMAILS_IP_WINDOW_MINUTES,
     })
     if (perIp >= EMAILS_PER_IP) throw errors.tooManyAttempts(EMAILS_IP_WINDOW_MINUTES)
+  }
+}
+
+/**
+ * То же для писем с кодом подтверждения.
+ *
+ * Без этого форма регистрации — бесплатная рассылка с нашего домена:
+ * адрес получателя выбирает тот, кто жмёт кнопку, а платим за репутацию
+ * домена мы. Плюс это ограничивает и заведение пустых компаний.
+ */
+export async function assertCanSendCode(email: string, ip?: string): Promise<void> {
+  const perAddress = await countAttempts({
+    email,
+    method: 'code',
+    sinceMinutes: CODES_WINDOW_MINUTES,
+  })
+  if (perAddress >= CODES_PER_ADDRESS) throw errors.tooManyAttempts(CODES_WINDOW_MINUTES)
+
+  if (ip) {
+    const perIp = await countAttempts({
+      ip,
+      method: 'code',
+      sinceMinutes: CODES_IP_WINDOW_MINUTES,
+    })
+    if (perIp >= CODES_PER_IP) throw errors.tooManyAttempts(CODES_IP_WINDOW_MINUTES)
   }
 }
 
@@ -279,8 +314,8 @@ export async function consumeCode(
     .orderBy(desc(loginTokens.createdAt))
     .limit(1)
 
-  if (!row) throw errors.tokenUnknown()
-  if (row.expiresAt.getTime() < Date.now()) throw errors.tokenExpired()
+  if (!row) throw errors.codeUnknown()
+  if (row.expiresAt.getTime() < Date.now()) throw errors.codeExpired()
   if (row.attempts >= MAX_CODE_ATTEMPTS) throw errors.tooManyAttempts(CODE_TTL_MINUTES)
 
   const ok = await verifySecret(normalizeCode(code), row.tokenHash)
@@ -289,7 +324,7 @@ export async function consumeCode(
       .update(loginTokens)
       .set({ attempts: row.attempts + 1 })
       .where(eq(loginTokens.id, row.id))
-    throw errors.tokenUnknown()
+    throw errors.codeUnknown()
   }
 
   await db.update(loginTokens).set({ usedAt: new Date() }).where(eq(loginTokens.id, row.id))
