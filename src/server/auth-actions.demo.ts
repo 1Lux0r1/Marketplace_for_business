@@ -37,3 +37,7 @@ export function loginAction(): Promise<FormResult> {
 export function logoutAction(): Promise<void> {
   return Promise.resolve()
 }
+
+export function setPasswordAction(): Promise<FormResult> {
+  return Promise.resolve(noServer)
+}

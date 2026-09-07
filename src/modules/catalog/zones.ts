@@ -1,51 +1,9 @@
-import type { Zone } from './types'
-
 /**
- * Зоны обслуживания. ЕДИНСТВЕННЫЙ источник кодов зон в системе.
+ * Зоны переехали в `shared/zones.ts`: это общий словарь, нужный и каталогу,
+ * и точкам клиента в `platform`. Оставь их здесь — `platform` импортировал бы
+ * `catalog`, который уже импортирует `platform`, и получилось бы кольцо.
  *
- * Заявка, карточка подрядчика и фильтр витрины берут коды отсюда — руками
- * их не вводит никто. Иначе в базе неизбежно окажутся «msk-cao», «МСК-ЦАО»
- * и «центр», и подбор по зоне перестанет находить половину подрядчиков.
- *
- * Пока это Москва: округа плюс город целиком для тех, кто выезжает везде.
- * Другие города добавляются сюда же — таблица для этого не нужна, список
- * меняется раз в год и должен меняться через код-ревью, а не через базу.
+ * Файл остаётся, чтобы публичный интерфейс каталога не менялся: снаружи
+ * зоны по-прежнему берут у него.
  */
-const ZONES: readonly Zone[] = [
-  { code: 'msk', name: 'Москва целиком', kind: 'city' },
-  { code: 'msk-cao', name: 'Центральный', kind: 'district' },
-  { code: 'msk-sao', name: 'Северный', kind: 'district' },
-  { code: 'msk-svao', name: 'Северо-Восточный', kind: 'district' },
-  { code: 'msk-vao', name: 'Восточный', kind: 'district' },
-  { code: 'msk-uvao', name: 'Юго-Восточный', kind: 'district' },
-  { code: 'msk-uao', name: 'Южный', kind: 'district' },
-  { code: 'msk-uzao', name: 'Юго-Западный', kind: 'district' },
-  { code: 'msk-zao', name: 'Западный', kind: 'district' },
-  { code: 'msk-szao', name: 'Северо-Западный', kind: 'district' },
-  { code: 'msk-zelao', name: 'Зеленоградский', kind: 'district' },
-  { code: 'msk-nao', name: 'Новомосковский', kind: 'district' },
-  { code: 'msk-tao', name: 'Троицкий', kind: 'district' },
-]
-
-export function listZones(): Zone[] {
-  return [...ZONES]
-}
-
-export function findZone(code: string): Zone | undefined {
-  return ZONES.find((zone) => zone.code === code)
-}
-
-export function isKnownZone(code: string): boolean {
-  return findZone(code) !== undefined
-}
-
-/**
- * Зона города покрывает все свои округа: подрядчик, работающий по всей Москве,
- * должен находиться и по запросу «Центральный округ».
- */
-export function coveringCodes(code: string): string[] {
-  const zone = findZone(code)
-  if (!zone || zone.kind === 'city') return [code]
-  const city = code.split('-')[0]
-  return city && city !== code ? [code, city] : [code]
-}
+export { listZones, findZone, isKnownZone, coveringCodes } from '@/shared/zones'

@@ -1,7 +1,9 @@
+export type { Zone, ZoneKind } from '@/shared/zones'
+import type { Zone } from '@/shared/zones'
+
 export type CategoryKind = 'service' | 'goods'
 export type ContractorStatus = 'draft' | 'active' | 'paused' | 'blocked'
 export type ListingStatus = 'draft' | 'pending' | 'published' | 'rejected' | 'archived'
-export type ZoneKind = 'district' | 'city'
 
 export type Category = {
   id: string
@@ -19,12 +21,6 @@ export type Contractor = {
   manualRating: number | null
   notes: string | null
   createdAt: Date
-}
-
-export type Zone = {
-  code: string
-  name: string
-  kind: ZoneKind
 }
 
 export type Listing = {

@@ -7,7 +7,13 @@ import * as platform from '@/modules/platform'
 import * as notifications from '@/modules/notifications'
 import { logger } from '@/shared/logger'
 import { startSession, endSession } from '@/server/session'
-import { loginSchema, registerSchema, resendSchema, verifySchema } from './auth-schemas'
+import {
+  loginSchema,
+  registerSchema,
+  resendSchema,
+  setPasswordSchema,
+  verifySchema,
+} from './auth-schemas'
 
 /**
  * Команды форм входа и регистрации.
@@ -105,6 +111,32 @@ export async function loginAction(input: unknown): Promise<FormResult> {
     return { ok: true }
   } catch (error: unknown) {
     return asFormResult(error, 'вход не прошёл')
+  }
+}
+
+/**
+ * Установка пароля по ссылке из приглашения.
+ *
+ * Сразу входим: человек только что доказал, что владеет почтой, переходом
+ * по ссылке. Требовать после этого ввести пароль ещё раз — лишний шаг там,
+ * где он ничего не проверяет.
+ */
+export async function setPasswordAction(input: unknown): Promise<FormResult> {
+  const parsed = setPasswordSchema.safeParse(input)
+  if (!parsed.success) return firstIssue(parsed.error)
+
+  try {
+    const { userId } = await platform.setPasswordByToken(parsed.data)
+    const user = await platform.getUser(userId)
+    const session = await platform.loginWithPassword({
+      login: user.email,
+      password: parsed.data.password,
+      remember: false,
+    })
+    await startSession(session.token, false)
+    return { ok: true, message: 'Пароль сохранён' }
+  } catch (error: unknown) {
+    return asFormResult(error, 'не удалось установить пароль')
   }
 }
 

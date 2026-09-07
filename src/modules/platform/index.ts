@@ -3,7 +3,7 @@ import * as auth from './auth'
 import * as outbox from './outbox'
 import * as service from './service'
 import { errors } from './errors'
-import type { LegalForm, Org, Role, User } from './types'
+import type { LegalForm, Org, Role, Site, User } from './types'
 
 /**
  * Публичный интерфейс модуля `platform`.
@@ -16,7 +16,7 @@ import type { LegalForm, Org, Role, User } from './types'
  * а отправка живёт в одном месте.
  */
 
-export type { Org, User, Role, LegalForm }
+export type { Org, User, Role, LegalForm, Site }
 export { PlatformError } from './errors'
 export type { PlatformErrorCode } from './errors'
 
@@ -36,6 +36,8 @@ export const LIMITS = {
 export const getOrg = service.getOrg
 export const createOrg = service.createOrg
 export const findOrgByInn = service.findOrgByInn
+export const updateOrg = service.updateOrg
+export const listOrgUsers = service.listOrgUsers
 export const getPlatformOrg = service.getPlatformOrg
 
 /** Включить роль подрядчика: отдельное действие, а не флажок при регистрации. */
@@ -43,6 +45,23 @@ export const enableContractorRole = service.enableContractorRole
 
 /** Результат проверки ИНН — пишется всегда, даже когда справочник промолчал. */
 export const recordInnVerification = service.recordInnVerification
+
+// ─── Точки клиента ──────────────────────────────────────────────────────
+
+/**
+ * Адреса, куда приезжает подрядчик. Каждая команда проверяет принадлежность
+ * сама (§6): чужая точка недоступна даже с верным идентификатором.
+ *
+ * Зона выбирается из списка `catalog.listZones()` и проверяется на входе.
+ * Неизвестный код молча обнулил бы подбор — точка просто перестала бы
+ * находиться подрядчиками, и никто бы не понял почему.
+ */
+export const listSites = service.listSites
+export const getSite = service.getSite
+export const addSite = service.addSite
+export const updateSite = service.updateSite
+export const archiveSite = service.archiveSite
+export const restoreSite = service.restoreSite
 
 // ─── Люди ───────────────────────────────────────────────────────────────
 
