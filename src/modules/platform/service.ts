@@ -286,6 +286,7 @@ function toOrg(row: OrgRow): Org {
     isPlatform: row.isPlatform,
     isActive: row.isActive,
     innVerifiedAt: row.innVerifiedAt,
+    innVerification: (row.innVerification as Record<string, unknown> | null) ?? null,
   }
 }
 

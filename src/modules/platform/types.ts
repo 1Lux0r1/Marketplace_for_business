@@ -16,6 +16,8 @@ export type Org = {
   isPlatform: boolean
   isActive: boolean
   innVerifiedAt: Date | null
+  /** Ответ справочника целиком: на основании чего компанию пустили. */
+  innVerification: Record<string, unknown> | null
 }
 
 export type User = {
