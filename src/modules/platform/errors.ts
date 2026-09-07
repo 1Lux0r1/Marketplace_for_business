@@ -33,9 +33,21 @@ export type PlatformErrorCode =
   | 'not_verified'
   | 'forbidden'
   | 'platform_org_exists'
+  | 'site_not_found'
+  | 'site_name_taken'
+  | 'bad_site'
+  | 'bad_org'
 
 export const errors = {
   orgNotFound: () => new PlatformError('org_not_found', 'Компания не найдена'),
+  siteNotFound: () => new PlatformError('site_not_found', 'Такой точки нет'),
+  siteNameTaken: () =>
+    new PlatformError(
+      'site_name_taken',
+      'Точка с таким названием уже есть. Назовите её иначе, чтобы не путать.',
+    ),
+  badSite: (why: string) => new PlatformError('bad_site', why),
+  badOrg: (why: string) => new PlatformError('bad_org', why),
   userNotFound: () => new PlatformError('user_not_found', 'Пользователь не найден'),
   emailTaken: () =>
     new PlatformError('email_taken', 'На этот адрес уже есть учётная запись. Попробуйте войти.'),

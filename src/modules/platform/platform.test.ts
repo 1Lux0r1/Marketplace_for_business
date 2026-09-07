@@ -412,3 +412,230 @@ describe('совмещение ролей', () => {
     expect(org.isContractor).toBe(true)
   })
 })
+
+describe('точки клиента', () => {
+  const site = {
+    name: 'Кофейня на Тверской',
+    address: 'Москва, Тверская 12, стр. 1',
+    zoneCode: 'msk-cao',
+  }
+
+  async function ownerOf(overrides: Partial<typeof registration> = {}) {
+    const { userId, orgId } = await registerAndConfirm(overrides)
+    return { actor: await platform.getUser(userId), orgId }
+  }
+
+  const second = {
+    companyName: 'Салон «Второй»',
+    inn: '7707083893',
+    email: 'boris@example.ru',
+    phone: '+7 916 000-00-02',
+    fullName: 'Борис Орлов',
+  }
+
+  it('клиент заводит вторую точку и видит обе', async () => {
+    const { actor, orgId } = await ownerOf()
+
+    await platform.addSite({ actor, orgId, ...site })
+    await platform.addSite({
+      actor,
+      orgId,
+      name: 'Кофейня на Пресне',
+      address: 'Москва, Пресненская наб. 8',
+      zoneCode: 'msk-cao',
+    })
+
+    const list = await platform.listSites(actor, orgId)
+    expect(list.map((s) => s.name)).toEqual(['Кофейня на Тверской', 'Кофейня на Пресне'])
+  })
+
+  /**
+   * Главный тест задачи. Чужая точка недоступна даже с верным идентификатором:
+   * проверка принадлежности стоит в самой команде, а не на экране.
+   */
+  it('сотрудник одной компании не видит точки другой даже с идентификатором', async () => {
+    const first = await ownerOf()
+    const other = await ownerOf(second)
+
+    const { id } = await platform.addSite({ actor: first.actor, orgId: first.orgId, ...site })
+
+    expect((await rejection(platform.getSite(other.actor, id))).code).toBe('forbidden')
+    expect((await rejection(platform.listSites(other.actor, first.orgId))).code).toBe('forbidden')
+    expect(
+      (
+        await rejection(
+          platform.updateSite({ actor: other.actor, siteId: id, ...site, name: 'Перехвачено' }),
+        )
+      ).code,
+    ).toBe('forbidden')
+    expect((await rejection(platform.archiveSite(other.actor, id))).code).toBe('forbidden')
+
+    // И точка осталась нетронутой
+    expect((await platform.getSite(first.actor, id)).name).toBe(site.name)
+  })
+
+  /**
+   * Разница между «нет прав» и «не найдено» — это способ узнать, какие точки
+   * есть у других: подставляя идентификаторы, чужой состав точек вычисляется
+   * по разным ответам. Поэтому на несуществующую точку ответ свой.
+   */
+  it('на несуществующую точку отвечает «не найдено», а не «нет прав»', async () => {
+    const { actor } = await ownerOf()
+    const missing = '01a00000-0000-7000-8000-000000000000'
+    expect((await rejection(platform.getSite(actor, missing))).code).toBe('site_not_found')
+  })
+
+  it('не принимает зону, которой нет в списке', async () => {
+    const { actor, orgId } = await ownerOf()
+    // Опечатка в коде зоны молча обнулила бы подбор: точка перестала бы
+    // находиться подрядчиками, и никто бы не понял почему
+    const error = await rejection(
+      platform.addSite({ actor, orgId, ...site, zoneCode: 'МСК-ЦАО' }),
+    )
+    expect(error.code).toBe('bad_site')
+  })
+
+  it('не заводит вторую точку с тем же названием', async () => {
+    const { actor, orgId } = await ownerOf()
+    await platform.addSite({ actor, orgId, ...site })
+    const error = await rejection(platform.addSite({ actor, orgId, ...site }))
+    expect(error.code).toBe('site_name_taken')
+  })
+
+  it('то же название в другой компании — не помеха', async () => {
+    const first = await ownerOf()
+    const other = await ownerOf(second)
+    await platform.addSite({ actor: first.actor, orgId: first.orgId, ...site })
+    await expect(
+      platform.addSite({ actor: other.actor, orgId: other.orgId, ...site }),
+    ).resolves.toMatchObject({ name: site.name })
+  })
+
+  it('архивная точка уходит из списка, но остаётся доступной по ссылке', async () => {
+    const { actor, orgId } = await ownerOf()
+    const { id } = await platform.addSite({ actor, orgId, ...site })
+
+    await platform.archiveSite(actor, id)
+
+    expect(await platform.listSites(actor, orgId)).toEqual([])
+    // На точку ссылаются заявки и сделки — она обязана остаться читаемой
+    expect((await platform.getSite(actor, id)).archived).toBe(true)
+    expect((await platform.listSites(actor, orgId, { includeArchived: true })).length).toBe(1)
+  })
+
+  it('освободившееся название можно занять заново', async () => {
+    const { actor, orgId } = await ownerOf()
+    const { id } = await platform.addSite({ actor, orgId, ...site })
+    await platform.archiveSite(actor, id)
+
+    await expect(platform.addSite({ actor, orgId, ...site })).resolves.toMatchObject({
+      name: site.name,
+    })
+    // ...но вернуть архивную под занятым именем уже нельзя
+    expect((await rejection(platform.restoreSite(actor, id))).code).toBe('site_name_taken')
+  })
+
+  /**
+   * Кабинет показывает телефон человеческим видом, и он же приходит обратно,
+   * когда точку правят. Значит показанный вид обязан приниматься на входе,
+   * иначе правка чужого поля ломала бы форму на ровном месте.
+   */
+  it('принимает телефон в том виде, в каком сам его показывает', async () => {
+    const { actor, orgId } = await ownerOf()
+    const created = await platform.addSite({
+      actor,
+      orgId,
+      ...site,
+      contactPhone: '+7 916 111-22-33',
+    })
+    expect(created.contactPhone).toBe('+79161112233')
+
+    const edited = await platform.updateSite({
+      actor,
+      siteId: created.id,
+      ...site,
+      contactPhone: '+7 916 111-22-33',
+    })
+    expect(edited.contactPhone).toBe('+79161112233')
+  })
+
+  it('телефон контакта на точке нормализуется, как и везде', async () => {
+    const { actor, orgId } = await ownerOf()
+    const created = await platform.addSite({
+      actor,
+      orgId,
+      ...site,
+      contactName: 'Ирина, администратор',
+      contactPhone: '8 (916) 111-22-33',
+    })
+    expect(created.contactPhone).toBe('+79161112233')
+  })
+})
+
+describe('реквизиты компании', () => {
+  it('владелец правит название и КПП, сотрудник — нет', async () => {
+    const { userId, orgId } = await registerAndConfirm()
+    const owner = await platform.getUser(userId)
+
+    const { userId: staffId } = await platform.inviteUser({
+      actor: owner,
+      orgId,
+      email: 'staff@example.ru',
+      phone: '+7 916 000-00-09',
+      fullName: 'Пётр Смирнов',
+      role: 'staff',
+    })
+    const staff = await platform.getUser(staffId)
+
+    const updated = await platform.updateOrg({
+      actor: owner,
+      orgId,
+      name: 'Кофейня «Пример» на Тверской',
+      kpp: '770101001',
+      legalAddress: 'Москва, Тверская 12',
+    })
+    expect(updated.name).toBe('Кофейня «Пример» на Тверской')
+    expect(updated.kpp).toBe('770101001')
+
+    expect(
+      (await rejection(platform.updateOrg({ actor: staff, orgId, name: 'Чужое' }))).code,
+    ).toBe('forbidden')
+  })
+
+  /**
+   * ИНН через форму настроек не меняется намеренно: это то, по чему компанию
+   * опознают и на что выписывают документы. Подмена ИНН сохранила бы всю
+   * историю сделок и выплат за другим юрлицом.
+   */
+  it('ИНН реквизитами не меняется', async () => {
+    const { userId, orgId } = await registerAndConfirm()
+    const owner = await platform.getUser(userId)
+    await platform.updateOrg({ actor: owner, orgId, name: 'Новое название' })
+    expect((await platform.getOrg(orgId)).inn).toBe(registration.inn)
+  })
+
+  it('не принимает КПП неправильной длины', async () => {
+    const { userId, orgId } = await registerAndConfirm()
+    const owner = await platform.getUser(userId)
+    const error = await rejection(
+      platform.updateOrg({ actor: owner, orgId, name: 'Кофейня', kpp: '7701' }),
+    )
+    expect(error.code).toBe('bad_org')
+  })
+
+  it('показывает всех, у кого есть доступ к компании', async () => {
+    const { userId, orgId } = await registerAndConfirm()
+    const owner = await platform.getUser(userId)
+    await platform.inviteUser({
+      actor: owner,
+      orgId,
+      email: 'staff2@example.ru',
+      phone: '+7 916 000-00-10',
+      fullName: 'Ольга Титова',
+      role: 'staff',
+    })
+
+    const people = await platform.listOrgUsers(owner, orgId)
+    expect(people.map((p) => p.fullName)).toEqual(['Анна Ковалёва', 'Ольга Титова'])
+  })
+})

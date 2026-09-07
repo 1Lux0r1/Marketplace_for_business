@@ -73,11 +73,44 @@ describe('права оператора', () => {
       ['server/auth-actions.ts', 'server/auth-actions.demo.ts'],
       ['server/session.ts', 'server/session.demo.ts'],
       ['server/storefront-queries.ts', 'server/storefront-queries.demo.ts'],
+      ['server/company-queries.ts', 'server/company-queries.demo.ts'],
+      ['server/company-actions.ts', 'server/company-actions.demo.ts'],
     ]
 
     for (const [real, demo] of pairs as Array<[string, string]>) {
       expect(exportedNames(read(real)).filter((n) => !exportedNames(read(demo)).includes(n)), `${demo} не отдаёт всё, что ${real}`).toEqual([])
     }
+  })
+
+  it('каждая команда кабинета спрашивает, кто пришёл', () => {
+    // Кабинет — это чужие точки и чужие реквизиты. Команда без `requireUser`
+    // выполнилась бы от имени никого, а модуль решает по человеку, кто пришёл
+    const code = read('server/company-actions.ts')
+    const unguarded: string[] = []
+
+    for (const match of code.matchAll(/export async function (\w+Action)\b/gu)) {
+      const name = match[1] as string
+      const rest = code.slice((match.index as number) + 1)
+      const end = rest.search(/\nexport /u)
+      const body = end === -1 ? rest : rest.slice(0, end)
+      if (!body.includes('requireUser()')) unguarded.push(name)
+    }
+
+    expect(unguarded, 'команда кабинета без requireUser()').toEqual([])
+  })
+
+  /**
+   * Подмена файлов на сборке демо работает по списку в `next.config.ts`.
+   * Забытая пара — это не падение тестов, а падение сборки демо через час.
+   */
+  it('каждая заглушка перечислена в next.config.ts', () => {
+    const config = read('../next.config.ts')
+    const stubs = readdirSync(join(ROOT, 'server'))
+      .filter((file) => file.endsWith('.demo.ts'))
+      .map((file) => file.replace('.demo.ts', ''))
+
+    const missing = stubs.filter((name) => !config.includes(name))
+    expect(missing, 'заглушка есть, а в next.config.ts её нет').toEqual([])
   })
 
   it('заглушка прав для демо никого не пускает', () => {

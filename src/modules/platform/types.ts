@@ -10,6 +10,9 @@ export type Org = {
   legalForm: LegalForm
   name: string
   inn: string | null
+  /** КПП есть только у юрлиц: у ИП и самозанятых его не бывает. */
+  kpp: string | null
+  legalAddress: string | null
   /** Заказывает и выполняет — не взаимоисключающие. */
   isClient: boolean
   isContractor: boolean
@@ -32,4 +35,23 @@ export type User = {
   position: string | null
   role: Role
   isActive: boolean
+}
+
+/**
+ * Точка клиента: адрес, куда приезжает подрядчик.
+ *
+ * `archived` вместо удаления: на точку ссылаются заявки и сделки, и удаление
+ * превратило бы историю заказов в ссылки в никуда.
+ */
+export type Site = {
+  id: string
+  orgId: string
+  name: string
+  address: string
+  zoneCode: string
+  contactName: string | null
+  contactPhone: string | null
+  note: string | null
+  archived: boolean
+  createdAt: Date
 }

@@ -93,6 +93,34 @@ export async function loginAction(input: unknown): Promise<FormResult> {
   }
 }
 
+/**
+ * Установка пароля по ссылке из приглашения.
+ *
+ * Сразу входим: человек только что доказал, что владеет почтой, переходом
+ * по ссылке. Требовать после этого ввести пароль ещё раз — лишний шаг там,
+ * где он ничего не проверяет.
+ */
+export async function setPasswordAction(input: unknown): Promise<FormResult> {
+  const parsed = z
+    .object({ token: z.string().trim().min(10), password: z.string() })
+    .safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'Проверьте заполнение формы' }
+
+  try {
+    const { userId } = await platform.setPasswordByToken(parsed.data)
+    const user = await platform.getUser(userId)
+    const session = await platform.loginWithPassword({
+      login: user.email,
+      password: parsed.data.password,
+      remember: false,
+    })
+    await startSession(session.token, false)
+    return { ok: true, message: 'Пароль сохранён' }
+  } catch (error: unknown) {
+    return asFormResult(error, 'не удалось установить пароль')
+  }
+}
+
 export async function logoutAction(): Promise<void> {
   await endSession()
   revalidatePath('/')
