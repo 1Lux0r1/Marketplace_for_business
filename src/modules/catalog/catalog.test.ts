@@ -16,6 +16,11 @@ beforeEach(async () => {
   const db = getDb()
   await db.execute(sql`truncate catalog.contractors, catalog.categories cascade`)
   await db.execute(sql`truncate platform.orgs, platform.outbox restart identity cascade`)
+  // Счётчик писем с кодом — такое же состояние в базе, как и всё остальное:
+  // без сброса четвёртая регистрация в файле упирается в ограничение частоты
+  await db.execute(
+    sql`truncate platform.login_attempts, platform.login_tokens restart identity cascade`,
+  )
 })
 
 afterAll(async () => {
