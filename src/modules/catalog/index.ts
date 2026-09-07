@@ -19,6 +19,8 @@ export type {
   ContractorStatus,
   Listing,
   ListingStatus,
+  SearchResult,
+  StorefrontListing,
   Zone,
   ZoneKind,
 } from './types'
@@ -58,3 +60,9 @@ export const findCandidates = service.findCandidates
 
 export const createListing = service.createListing
 export const listListings = service.listListings
+
+// ─── Витрина ────────────────────────────────────────────────────────────
+
+/** Поиск по витрине. Видны только опубликованные карточки. */
+export const searchListings = service.searchListings
+export const getStorefrontListing = service.getStorefrontListing

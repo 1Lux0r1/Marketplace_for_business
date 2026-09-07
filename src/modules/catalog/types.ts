@@ -46,3 +46,31 @@ export type ContractorCard = Contractor & {
   categories: Category[]
   zones: Zone[]
 }
+
+/**
+ * Карточка витрины: то, что клиент видит в сетке и на странице услуги.
+ *
+ * Собирается одним запросом внутри своей схемы — цена, категория и подрядчик
+ * нужны на каждой плитке, и ходить за ними по одной было бы N+1 запросов
+ * на страницу.
+ */
+export type StorefrontListing = {
+  id: string
+  title: string
+  description: string | null
+  unit: string
+  priceKopecks: bigint
+  minQty: string
+  leadTimeHours: number | null
+  categoryId: string
+  categoryName: string
+  contractorId: string
+  contractorOrgId: string
+  contractorRating: number | null
+  zones: string[]
+}
+
+export type SearchResult = {
+  items: StorefrontListing[]
+  total: number
+}

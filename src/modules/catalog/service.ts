@@ -2,7 +2,14 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import { getDb } from '@/shared/db'
 import { uuidv7 } from '@/shared/id'
 import * as platform from '@/modules/platform'
-import { categories, contractorCategories, contractors, coverageZones, listings } from './schema'
+import {
+  categories,
+  contractorCategories,
+  contractors,
+  coverageZones,
+  listingZones,
+  listings,
+} from './schema'
 import { errors } from './errors'
 import { findZone, isKnownZone, coveringCodes } from './zones'
 import type {
@@ -11,6 +18,8 @@ import type {
   ContractorCard,
   ContractorStatus,
   Listing,
+  SearchResult,
+  StorefrontListing,
   Zone,
 } from './types'
 
@@ -376,4 +385,164 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
     current = e.cause
   }
   return false
+}
+
+// ─── Витрина ────────────────────────────────────────────────────────────
+
+/**
+ * Поиск по витрине: то, что видит клиент.
+ *
+ * Видны ТОЛЬКО опубликованные карточки — `draft`, `pending` и `rejected`
+ * это внутренняя кухня модерации, клиенту её показывать нельзя.
+ *
+ * Поиск по строке — простое совпадение, без полнотекстового индекса.
+ * На первой сотне карточек разницы нет, а индекс это отдельная работа
+ * и отдельное обслуживание.
+ *
+ * Зона карточки: если у карточки свои зоны не заданы, работают зоны
+ * подрядчика. Пустой список у карточки означает «везде, где работает он»,
+ * а не «нигде».
+ */
+export async function searchListings(input: {
+  categoryId?: string | undefined
+  zoneCode?: string | undefined
+  query?: string | undefined
+  limit?: number | undefined
+  offset?: number | undefined
+}): Promise<SearchResult> {
+  const db = getDb()
+
+  if (input.zoneCode && !isKnownZone(input.zoneCode)) throw errors.unknownZone(input.zoneCode)
+  const zones = input.zoneCode ? coveringCodes(input.zoneCode) : null
+
+  const limit = Math.min(Math.max(input.limit ?? 24, 1), 100)
+  const offset = Math.max(input.offset ?? 0, 0)
+  const text = input.query?.trim()
+
+  const conditions = [
+    eq(listings.status, 'published'),
+    eq(contractors.status, 'active'),
+  ]
+  if (input.categoryId) conditions.push(eq(listings.categoryId, input.categoryId))
+  if (text) {
+    const pattern = `%${text.replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
+    conditions.push(
+      sql`(${listings.title} ilike ${pattern} or coalesce(${listings.description}, '') ilike ${pattern})`,
+    )
+  }
+  if (zones) {
+    conditions.push(sql`(
+      case
+        when exists (select 1 from catalog.listing_zones lz where lz.listing_id = ${listings.id})
+          then exists (
+            select 1 from catalog.listing_zones lz
+            where lz.listing_id = ${listings.id} and lz.zone_code in ${zones})
+        else exists (
+          select 1 from catalog.coverage_zones cz
+          where cz.contractor_id = ${contractors.id} and cz.code in ${zones})
+      end)`)
+  }
+
+  const where = and(...conditions)
+
+  const [rows, [counted]] = await Promise.all([
+    db
+      .select({
+        listing: listings,
+        categoryName: categories.name,
+        contractorOrgId: contractors.orgId,
+        contractorRating: contractors.manualRating,
+      })
+      .from(listings)
+      .innerJoin(contractors, eq(contractors.id, listings.contractorId))
+      .innerJoin(categories, eq(categories.id, listings.categoryId))
+      .where(where)
+      .orderBy(byStrength, asc(listings.priceKopecks))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(listings)
+      .innerJoin(contractors, eq(contractors.id, listings.contractorId))
+      .where(where),
+  ])
+
+  const items = await withZones(rows)
+  return { items, total: counted?.total ?? 0 }
+}
+
+/** Одна карточка витрины по её номеру. Черновики и снятые не отдаются. */
+export async function getStorefrontListing(id: string): Promise<StorefrontListing> {
+  const db = getDb()
+  const rows = await db
+    .select({
+      listing: listings,
+      categoryName: categories.name,
+      contractorOrgId: contractors.orgId,
+      contractorRating: contractors.manualRating,
+    })
+    .from(listings)
+    .innerJoin(contractors, eq(contractors.id, listings.contractorId))
+    .innerJoin(categories, eq(categories.id, listings.categoryId))
+    .where(
+      and(
+        eq(listings.id, id),
+        eq(listings.status, 'published'),
+        eq(contractors.status, 'active'),
+      ),
+    )
+    .limit(1)
+
+  const [item] = await withZones(rows)
+  if (!item) throw errors.listingNotFound()
+  return item
+}
+
+type StorefrontRow = {
+  listing: typeof listings.$inferSelect
+  categoryName: string
+  contractorOrgId: string
+  contractorRating: number | null
+}
+
+/** Зоны для пачки карточек: своими, а если своих нет — зонами подрядчика. */
+async function withZones(rows: StorefrontRow[]): Promise<StorefrontListing[]> {
+  if (rows.length === 0) return []
+  const db = getDb()
+
+  const listingIds = rows.map((r) => r.listing.id)
+  const contractorIds = [...new Set(rows.map((r) => r.listing.contractorId))]
+
+  const [own, byContractor] = await Promise.all([
+    db.select().from(listingZones).where(inArray(listingZones.listingId, listingIds)),
+    db.select().from(coverageZones).where(inArray(coverageZones.contractorId, contractorIds)),
+  ])
+
+  const ownByListing = new Map<string, string[]>()
+  for (const row of own) {
+    ownByListing.set(row.listingId, [...(ownByListing.get(row.listingId) ?? []), row.zoneCode])
+  }
+  const byContractorMap = new Map<string, string[]>()
+  for (const row of byContractor) {
+    byContractorMap.set(row.contractorId, [
+      ...(byContractorMap.get(row.contractorId) ?? []),
+      row.code,
+    ])
+  }
+
+  return rows.map((row) => ({
+    id: row.listing.id,
+    title: row.listing.title,
+    description: row.listing.description,
+    unit: row.listing.unit,
+    priceKopecks: row.listing.priceKopecks,
+    minQty: row.listing.minQty,
+    leadTimeHours: row.listing.leadTimeHours,
+    categoryId: row.listing.categoryId,
+    categoryName: row.categoryName,
+    contractorId: row.listing.contractorId,
+    contractorOrgId: row.contractorOrgId,
+    contractorRating: row.contractorRating,
+    zones: ownByListing.get(row.listing.id) ?? byContractorMap.get(row.listing.contractorId) ?? [],
+  }))
 }

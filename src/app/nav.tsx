@@ -13,7 +13,7 @@ import { SearchIcon, BagIcon, DocIcon, BuildingIcon, LockIcon } from '@/ui/icons
  * в `design/`. Активный раздел: бирюзовый текст и бирюзовое подчёркивание.
  */
 const sections = [
-  { href: '/', label: 'Найти услугу', Icon: SearchIcon, count: 0 },
+  { href: '/catalog', label: 'Найти услугу', Icon: SearchIcon, count: 0 },
   { href: '/orders', label: 'Мои заказы', Icon: BagIcon, count: 0 },
   { href: '/documents', label: 'Документы и счета', Icon: DocIcon, count: 0 },
   { href: '/company', label: 'Компания', Icon: BuildingIcon, count: 0 },
@@ -33,7 +33,7 @@ export function Nav({ isOperator = false }: { isOperator?: boolean }) {
       className="flex items-center gap-6 overflow-x-auto border-t border-line px-4 md:gap-9 md:px-10"
     >
       {visible.map(({ href, label, Icon, count }) => {
-        const active = href === '/' ? pathname === '/' : pathname.startsWith(href)
+        const active = pathname === href || pathname.startsWith(`${href}/`)
         return (
           <Link
             key={href}

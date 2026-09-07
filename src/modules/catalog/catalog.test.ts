@@ -284,3 +284,158 @@ describe('карточки каталога', () => {
     expect(published.publishedAt).toBeInstanceOf(Date)
   })
 })
+
+describe('витрина', () => {
+  async function makeStorefront() {
+    const cleaning = await makeCategory('cleaning', 'Клининг')
+    const hvac = await makeCategory('hvac', 'Вентиляция')
+    const contractor = await makeContractor({
+      name: 'Демо-Чистый', inn: '7701000001',
+      categoryIds: [cleaning, hvac], zones: ['msk-cao'], rating: 5,
+    })
+    return { cleaning, hvac, contractor }
+  }
+
+  async function makeListing(options: {
+    contractorId: string
+    categoryId: string
+    title: string
+    rubles: number
+    status?: 'draft' | 'published'
+    description?: string
+  }) {
+    return catalog.createListing({
+      contractorId: options.contractorId,
+      categoryId: options.categoryId,
+      title: options.title,
+      description: options.description,
+      unit: 'объект',
+      priceKopecks: BigInt(options.rubles) * 100n,
+      status: options.status ?? 'published',
+    })
+  }
+
+  it('показывает только опубликованные карточки', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'На витрине', rubles: 5000 })
+    await makeListing({
+      contractorId: contractor.id, categoryId: cleaning,
+      title: 'Черновик', rubles: 4000, status: 'draft',
+    })
+
+    // Черновики и то, что ждёт модерации, — внутренняя кухня, клиенту её не показывают
+    const found = await catalog.searchListings({})
+    expect(found.items.map((i) => i.title)).toEqual(['На витрине'])
+    expect(found.total).toBe(1)
+  })
+
+  it('прячет карточки неактивного подрядчика', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Уборка', rubles: 5000 })
+    await catalog.setContractorStatus(contractor.id, 'blocked')
+
+    // Иначе заблокированный подрядчик продолжал бы получать заказы
+    expect((await catalog.searchListings({})).items).toEqual([])
+  })
+
+  it('фильтрует по категории', async () => {
+    const { cleaning, hvac, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Уборка', rubles: 5000 })
+    await makeListing({ contractorId: contractor.id, categoryId: hvac, title: 'Вытяжка', rubles: 12000 })
+
+    const found = await catalog.searchListings({ categoryId: hvac })
+    expect(found.items.map((i) => i.title)).toEqual(['Вытяжка'])
+  })
+
+  it('фильтрует по зоне подрядчика', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Уборка', rubles: 5000 })
+
+    expect((await catalog.searchListings({ zoneCode: 'msk-cao' })).items).toHaveLength(1)
+    expect((await catalog.searchListings({ zoneCode: 'msk-tao' })).items).toEqual([])
+  })
+
+  it('ищет по названию и описанию', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({
+      contractorId: contractor.id, categoryId: cleaning,
+      title: 'Генеральная уборка', rubles: 5000, description: 'Мойка окон и вынос мусора',
+    })
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Вытяжка', rubles: 12000 })
+
+    expect((await catalog.searchListings({ query: 'генеральная' })).items).toHaveLength(1)
+    // По описанию тоже: человек ищет «окна», а в названии их нет
+    expect((await catalog.searchListings({ query: 'окон' })).items).toHaveLength(1)
+    expect((await catalog.searchListings({ query: 'бухгалтерия' })).items).toEqual([])
+  })
+
+  it('символы подстановки в запросе ничего не ломают', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Уборка', rubles: 5000 })
+
+    // Процент в поиске должен искать процент, а не «что угодно»
+    expect((await catalog.searchListings({ query: '%' })).items).toEqual([])
+  })
+
+  it('отдаёт постранично и сообщает, сколько всего', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    for (let i = 0; i < 5; i += 1) {
+      await makeListing({
+        contractorId: contractor.id, categoryId: cleaning,
+        title: `Услуга ${i}`, rubles: 1000 + i,
+      })
+    }
+
+    const page = await catalog.searchListings({ limit: 2, offset: 2 })
+    expect(page.items).toHaveLength(2)
+    // Всего — по всей выборке, а не по странице: иначе не нарисовать «ещё 3»
+    expect(page.total).toBe(5)
+  })
+
+  it('карточка услуги отдаётся по номеру, но только опубликованная', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    const published = await makeListing({
+      contractorId: contractor.id, categoryId: cleaning, title: 'Уборка', rubles: 5000,
+    })
+    const draft = await makeListing({
+      contractorId: contractor.id, categoryId: cleaning,
+      title: 'Черновик', rubles: 4000, status: 'draft',
+    })
+
+    const card = await catalog.getStorefrontListing(published.id)
+    expect(card.title).toBe('Уборка')
+    expect(card.categoryName).toBe('Клининг')
+    expect(card.zones).toEqual(['msk-cao'])
+
+    // Черновик по прямой ссылке тоже показывать нельзя
+    await expect(catalog.getStorefrontListing(draft.id)).rejects.toMatchObject({
+      code: 'listing_not_found',
+    })
+  })
+
+  it('карточки неоценённого подрядчика не встают впереди сильного', async () => {
+    // Та же ловушка, что и в отборе кандидатов: без `nulls last` PostgreSQL
+    // ставит подрядчика без оценки первым, и клиент видит его первой карточкой
+    const { cleaning, contractor } = await makeStorefront()
+    const newcomer = await makeContractor({
+      name: 'Демо-Новичок', inn: '7701000019',
+      categoryIds: [cleaning], zones: ['msk-cao'], rating: null,
+    })
+    await makeListing({
+      contractorId: newcomer.id, categoryId: cleaning, title: 'От новичка', rubles: 1000,
+    })
+    await makeListing({
+      contractorId: contractor.id, categoryId: cleaning, title: 'От сильного', rubles: 9000,
+    })
+
+    const found = await catalog.searchListings({ categoryId: cleaning })
+    // Сильный первым, хотя его карточка дороже: цена решает внутри равных
+    expect(found.items.map((i) => i.title)).toEqual(['От сильного', 'От новичка'])
+  })
+
+  it('несуществующую зону отклоняет, а не показывает пустую витрину', async () => {
+    await expect(catalog.searchListings({ zoneCode: 'опечатка' })).rejects.toMatchObject({
+      code: 'unknown_zone',
+    })
+  })
+})
