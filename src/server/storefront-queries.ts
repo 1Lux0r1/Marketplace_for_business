@@ -39,18 +39,22 @@ export type StorefrontPage = {
   total: number
   categories: catalog.Category[]
   zones: catalog.Zone[]
+  /** Верх ползунка цены: самая дорогая карточка витрины, а не круглое число. */
+  priceCeilingKopecks: bigint
 }
 
 export async function storefront(input: {
   categoryId?: string | undefined
   zoneCode?: string | undefined
   query?: string | undefined
+  priceToKopecks?: bigint | undefined
   limit?: number | undefined
   offset?: number | undefined
 }): Promise<StorefrontPage> {
-  const [found, categories] = await Promise.all([
+  const [found, categories, priceCeilingKopecks] = await Promise.all([
     catalog.searchListings(input),
     catalog.listCategories({ activeOnly: true }),
+    catalog.storefrontPriceCeiling(),
   ])
 
   return {
@@ -58,6 +62,7 @@ export async function storefront(input: {
     total: found.total,
     categories,
     zones: catalog.listZones(),
+    priceCeilingKopecks,
   }
 }
 

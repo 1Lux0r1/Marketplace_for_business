@@ -1,7 +1,8 @@
 import { isAvailable, storefront, storefrontCard } from '@/server/storefront-queries'
 import { CatalogError } from '@/modules/catalog'
 import { GuaranteeBand } from '@/ui'
-import { DemoWithoutDatabase, Filters, Grid, ListingDetails, NothingFound, NotPublished } from './catalog-view'
+import { Filters } from './filters'
+import { DemoWithoutDatabase, Grid, ListingDetails, NothingFound, NotPublished } from './catalog-view'
 
 /**
  * Витрина: основной путь клиента (§1).
@@ -24,7 +25,7 @@ import { DemoWithoutDatabase, Filters, Grid, ListingDetails, NothingFound, NotPu
 
 const PAGE_SIZE = 24
 
-type Search = { category?: string; zone?: string; q?: string; id?: string }
+type Search = { category?: string; zone?: string; q?: string; priceTo?: string; id?: string }
 
 export default async function CatalogPage({
   searchParams,
@@ -42,7 +43,11 @@ export default async function CatalogPage({
     return card ? <ListingDetails item={card} /> : <NotPublished />
   }
 
-  const hasFilters = Boolean(params.category ?? params.zone ?? params.q)
+  const hasFilters = Boolean(params.category ?? params.zone ?? params.q ?? params.priceTo)
+
+  // Кривое число в адресе — это чужая ссылка или опечатка, а не повод
+  // показать пустую витрину: фильтр просто не применяется
+  const priceTo = /^\d+$/.test(params.priceTo ?? '') ? BigInt(params.priceTo!) : undefined
 
   // Неизвестная зона в адресе — это опечатка или чужая ссылка, а не повод
   // показать пустую витрину: сбрасываем фильтр и показываем всё
@@ -50,10 +55,16 @@ export default async function CatalogPage({
     categoryId: params.category,
     zoneCode: params.zone,
     query: params.q,
+    priceToKopecks: priceTo,
     limit: PAGE_SIZE,
   }).catch((error: unknown) => {
     if (error instanceof CatalogError) {
-      return storefront({ categoryId: params.category, query: params.q, limit: PAGE_SIZE })
+      return storefront({
+        categoryId: params.category,
+        query: params.q,
+        priceToKopecks: priceTo,
+        limit: PAGE_SIZE,
+      })
     }
     throw error
   })
@@ -72,7 +83,12 @@ export default async function CatalogPage({
           заплатил: это то, чем площадка отличается от доски объявлений (§1) */}
       <GuaranteeBand />
 
-      <Filters categories={page.categories} zones={page.zones} current={params} />
+      <Filters
+        categories={page.categories}
+        zones={page.zones}
+        current={params}
+        maxPriceKopecks={page.priceCeilingKopecks}
+      />
 
       {page.items.length === 0 ? (
         <NothingFound hasFilters={hasFilters} />

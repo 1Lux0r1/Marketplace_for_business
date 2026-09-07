@@ -2,7 +2,7 @@ import Link from 'next/link'
 import {
   Button,
   CategoryArt,
-  Chip,
+  CategoryLabel,
   EmptyState,
   GuaranteeBand,
   GuaranteeLine,
@@ -11,7 +11,6 @@ import {
 } from '@/ui'
 import { formatKopecks } from '@/shared/money'
 import type { StorefrontCard } from '@/server/storefront-queries'
-import type { Category, Zone } from '@/modules/catalog'
 
 /**
  * ЭТО ФАЙЛ ОФОРМЛЕНИЯ ВИТРИНЫ. Здесь только вид, ни одного запроса к данным.
@@ -37,77 +36,6 @@ import type { Category, Zone } from '@/modules/catalog'
  * - таблиц вместо карточек на витрине быть не должно (§7).
  */
 
-export function Filters({
-  categories,
-  zones,
-  current,
-}: {
-  categories: Category[]
-  zones: Zone[]
-  current: { category?: string | undefined; zone?: string | undefined; q?: string | undefined }
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <form action="/catalog" className="flex flex-wrap gap-2">
-        {current.category && <input type="hidden" name="category" value={current.category} />}
-        {current.zone && <input type="hidden" name="zone" value={current.zone} />}
-        <input
-          name="q"
-          defaultValue={current.q ?? ''}
-          placeholder="Что нужно сделать на точке?"
-          aria-label="Поиск по услугам"
-          className="h-11 min-w-0 flex-1 rounded-pill border border-line-strong bg-surface px-4 text-body text-ink placeholder:text-ink-3"
-        />
-        <Button type="submit">Найти</Button>
-      </form>
-
-      <ChipRow
-        label="Категория"
-        options={[{ value: '', label: 'Все' }, ...categories.map((c) => ({ value: c.id, label: c.name }))]}
-        selected={current.category ?? ''}
-        param="category"
-        current={current}
-      />
-      <ChipRow
-        label="Где"
-        options={[{ value: '', label: 'Везде' }, ...zones.map((z) => ({ value: z.code, label: z.name }))]}
-        selected={current.zone ?? ''}
-        param="zone"
-        current={current}
-      />
-    </div>
-  )
-}
-
-function ChipRow({
-  label,
-  options,
-  selected,
-  param,
-  current,
-}: {
-  label: string
-  options: Array<{ value: string; label: string }>
-  selected: string
-  param: 'category' | 'zone'
-  current: { category?: string | undefined; zone?: string | undefined; q?: string | undefined }
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2.5">
-      <span className="text-label font-bold tracking-[0.08em] text-ink-3 uppercase">{label}</span>
-      {options.map((option) => (
-        <Chip
-          key={option.value || 'any'}
-          href={buildHref({ ...current, [param]: option.value || undefined })}
-          selected={selected === option.value}
-        >
-          {option.label}
-        </Chip>
-      ))}
-    </div>
-  )
-}
-
 export function Grid({ items }: { items: StorefrontCard[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -121,12 +49,10 @@ export function Grid({ items }: { items: StorefrontCard[] }) {
 function ListingCard({ item }: { item: StorefrontCard }) {
   return (
     <article className="relative flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card transition-shadow duration-150 hover:shadow-raised">
-      <CategoryArt categoryCode={item.categoryCode} className="h-[132px]" />
+      <CategoryArt categoryCode={item.categoryCode} className="h-[156px]" />
 
       <div className="flex flex-1 flex-col gap-2.5 p-5">
-        <span className="text-label font-bold tracking-[0.08em] text-ink-3 uppercase">
-          {item.categoryName}
-        </span>
+        <CategoryLabel categoryCode={item.categoryCode}>{item.categoryName}</CategoryLabel>
 
         {/* Ссылка растянута на всю карточку: на витрине человек целится
             в карточку, а не в её заголовок */}
@@ -149,7 +75,7 @@ function ListingCard({ item }: { item: StorefrontCard }) {
         {/* Цена внизу и одинаково у всех карточек: её сравнивают взглядом
             по сетке, а не ищут в каждой карточке заново */}
         <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-2">
-          <span className="num text-page font-extrabold text-ink">
+          <span className="num text-page font-extrabold text-accent-strong">
             {formatKopecks(item.priceKopecks)}
           </span>
           <span className="text-table text-ink-3">за {item.unit}</span>
@@ -331,16 +257,4 @@ function hours(value: number): string {
   const days = Math.round(value / 24)
   const word = days === 1 ? 'день' : days < 5 ? 'дня' : 'дней'
   return `${days} ${word}`
-}
-
-function buildHref(state: {
-  category?: string | undefined
-  zone?: string | undefined
-  q?: string | undefined
-}): string {
-  const query = new URLSearchParams()
-  if (state.category) query.set('category', state.category)
-  if (state.zone) query.set('zone', state.zone)
-  if (state.q) query.set('q', state.q)
-  return query.size > 0 ? `/catalog?${query}` : '/catalog'
 }

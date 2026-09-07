@@ -5,7 +5,7 @@ import { AuthButtons } from './auth/auth-buttons'
 import { UserMenu } from './auth/user-menu'
 import { currentUser, currentOrg } from '@/server/session'
 import { sectionsFor } from './sections'
-import { SearchIcon } from '@/ui/icons'
+import { HeaderSearch } from './header-search'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -45,10 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </span>
             </div>
 
-            <div className="flex h-11 min-w-0 max-w-[620px] flex-1 items-center gap-3 rounded-pill border border-line-strong bg-surface-2 px-4 text-ink-3">
-              <SearchIcon size={19} />
-              <span className="truncate text-body">Что нужно сделать на точке?</span>
-            </div>
+            <HeaderSearch />
 
             <div className="ml-auto flex flex-none items-center gap-3">
               {user ? (

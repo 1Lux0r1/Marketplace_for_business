@@ -18,18 +18,40 @@ import { cx } from './cx'
 type Props = { categoryCode: string; className?: string }
 
 /**
- * Подложка у всех категорий одна и нейтральная — различает их рисунок,
- * а не цвет.
+ * Тон категории — из декоративной палитры, а не из статусной.
  *
- * Это не бедность палитры, а правило §7.2: статусный цвет не используется
- * как украшение. Оранжевая плашка у электрики читалась бы как выгода,
- * красная у пожарной безопасности — как проблема, зелёная у охраны труда —
- * как «успешно». На витрине рядом стоят настоящие бейджи этих цветов,
- * и два разных смысла у одного цвета — это ровно то, чего §7.2 не допускает.
+ * Первый вариант красил по смыслу: электрику оранжевым, пожарную безопасность
+ * красным, охрану труда зелёным. Это было ошибкой — рядом на витрине стоят
+ * настоящие бейджи этих цветов, и один цвет с двумя смыслами не читается
+ * ни тем ни другим (§7.2).
  *
- * Цветными на витрине остаются только три вещи: действие, выгода и состояние.
+ * Решение не «убрать цвет», а завести цвету другую роль. Тона `--deco-*`
+ * ничего не означают: они просто различают санобработку и электрику. Каждый
+ * отстоит от любого статусного не меньше чем на 25° по цветовому кругу,
+ * и это проверяет `tokens.test.ts` — иначе лаймовая плашка со временем
+ * начнёт читаться как «ждём приёмки».
+ *
+ * Родственные категории делят тон намеренно: санобработка, дезинсекция
+ * и дератизация — одна работа для владельца точки, и на витрине они должны
+ * выглядеть роднёй.
  */
-const TONE = 'bg-surface-3 text-ink-2'
+const TONE: Record<string, string> = {
+  sanitation: 'bg-deco-2 text-deco-2-ink',
+  disinsection: 'bg-deco-2 text-deco-2-ink',
+  deratization: 'bg-deco-2 text-deco-2-ink',
+  cleaning: 'bg-deco-1 text-deco-1-ink',
+  'prof-chemistry': 'bg-deco-1 text-deco-1-ink',
+  supplies: 'bg-deco-1 text-deco-1-ink',
+  hvac: 'bg-deco-3 text-deco-3-ink',
+  electrical: 'bg-deco-3 text-deco-3-ink',
+  plumbing: 'bg-deco-3 text-deco-3-ink',
+  'labour-safety': 'bg-deco-4 text-deco-4-ink',
+  sout: 'bg-deco-4 text-deco-4-ink',
+  'fire-safety': 'bg-deco-5 text-deco-5-ink',
+}
+
+/** Незнакомая категория — нейтральная подложка, а не пустое место. */
+const FALLBACK = 'bg-surface-3 text-ink-2'
 
 function Art({ code }: { code: string }) {
   switch (code) {
@@ -160,7 +182,11 @@ export function CategoryArt({ categoryCode, className }: Props) {
   return (
     <div
       aria-hidden
-      className={cx('flex items-center justify-center overflow-hidden', TONE, className)}
+      className={cx(
+        'flex items-center justify-center overflow-hidden',
+        TONE[categoryCode] ?? FALLBACK,
+        className,
+      )}
     >
       <svg
         width="96"
@@ -171,10 +197,50 @@ export function CategoryArt({ categoryCode, className }: Props) {
         strokeWidth={2.2}
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="opacity-70"
+        className="opacity-90"
       >
         <Art code={categoryCode} />
       </svg>
     </div>
   )
+}
+
+/**
+ * Подпись категории в тоне её иллюстрации.
+ *
+ * Картинка и подпись под ней должны читаться как одно целое: серая надпись
+ * под цветной плашкой выглядит ярлыком, наклеенным поверх чужой карточки.
+ */
+export function CategoryLabel({
+  categoryCode,
+  children,
+}: {
+  categoryCode: string
+  children: React.ReactNode
+}) {
+  return (
+    <span
+      className={cx(
+        'text-label font-bold tracking-[0.08em] uppercase',
+        LABEL[categoryCode] ?? 'text-ink-3',
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+const LABEL: Record<string, string> = {
+  sanitation: 'text-deco-2-ink',
+  disinsection: 'text-deco-2-ink',
+  deratization: 'text-deco-2-ink',
+  cleaning: 'text-deco-1-ink',
+  'prof-chemistry': 'text-deco-1-ink',
+  supplies: 'text-deco-1-ink',
+  hvac: 'text-deco-3-ink',
+  electrical: 'text-deco-3-ink',
+  plumbing: 'text-deco-3-ink',
+  'labour-safety': 'text-deco-4-ink',
+  sout: 'text-deco-4-ink',
+  'fire-safety': 'text-deco-5-ink',
 }

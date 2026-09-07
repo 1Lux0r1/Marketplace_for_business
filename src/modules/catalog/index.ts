@@ -65,4 +65,5 @@ export const listListings = service.listListings
 
 /** Поиск по витрине. Видны только опубликованные карточки. */
 export const searchListings = service.searchListings
+export const storefrontPriceCeiling = service.storefrontPriceCeiling
 export const getStorefrontListing = service.getStorefrontListing
