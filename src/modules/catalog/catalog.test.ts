@@ -15,7 +15,12 @@ import { CatalogError } from './errors'
 beforeEach(async () => {
   const db = getDb()
   await db.execute(sql`truncate catalog.contractors, catalog.categories cascade`)
-  await db.execute(sql`truncate platform.orgs cascade`)
+  await db.execute(sql`truncate platform.orgs, platform.outbox restart identity cascade`)
+  // Счётчик писем с кодом — такое же состояние в базе, как и всё остальное:
+  // без сброса четвёртая регистрация в файле упирается в ограничение частоты
+  await db.execute(
+    sql`truncate platform.login_attempts, platform.login_tokens restart identity cascade`,
+  )
 })
 
 afterAll(async () => {
@@ -25,6 +30,20 @@ afterAll(async () => {
 async function makeOrg(name: string, inn: string) {
   return platform.createOrg({ legalForm: 'company', name, inn })
 }
+
+/**
+ * Выдуманные, но правильно устроенные ИНН: контрольная цифра сходится.
+ * Набирать их в цикле нельзя — `platform` проверяет контрольную сумму,
+ * и «7701000000» до базы не доедет.
+ */
+const DEMO_INNS = [
+  '7701000019',
+  '7701000026',
+  '7701000033',
+  '7701000040',
+  '7701000058',
+  '7701000065',
+] as const
 
 async function makeCategory(code: string, name: string) {
   const db = getDb()
@@ -40,13 +59,14 @@ async function makeContractor(options: {
   categoryIds: string[]
   zones: string[]
   status?: 'draft' | 'active' | 'paused' | 'blocked'
-  rating?: number
+  /** `null` — подрядчик, которого ещё никто не оценивал. */
+  rating?: number | null
 }) {
   const org = await makeOrg(options.name, options.inn)
   const contractor = await catalog.createContractor({
     orgId: org.id,
     status: options.status ?? 'active',
-    manualRating: options.rating ?? 3,
+    manualRating: options.rating === undefined ? 3 : (options.rating ?? undefined),
   })
   await catalog.setContractorCategories(contractor.id, options.categoryIds)
   await catalog.setContractorZones(contractor.id, options.zones)
@@ -63,7 +83,7 @@ describe('граница модулей', () => {
   })
 
   it('одна компания — один подрядчик', async () => {
-    const org = await makeOrg('Кофейня «Пример»', '7701234567')
+    const org = await makeOrg('Кофейня «Пример»', '7701234560')
     await catalog.createContractor({ orgId: org.id })
     await expect(catalog.createContractor({ orgId: org.id })).rejects.toMatchObject({
       code: 'org_already_contractor',
@@ -72,19 +92,19 @@ describe('граница модулей', () => {
 
   it('в коде каталога нет ни одного запроса к таблицам platform', () => {
     // Правило §4.2, проверяемое, а не на словах: один такой запрос — и модули
-    // перестают выделяться в сервисы без переписывания
+    // перестают выделяться в сервисы без переписывания.
+    //
+    // Ищем именно запрос — «from platform.orgs», «join platform.users».
+    // Вызов соседа через его интерфейс (`platform.getOrg()`, `platform.publish()`)
+    // не только разрешён, но и есть единственный правильный способ (§4.4).
     const dir = 'src/modules/catalog'
     const files = readdirSync(dir).filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
     const hits: string[] = []
 
     for (const file of files) {
       const code = readFileSync(join(dir, file), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gmu, '')
-      for (const match of code.matchAll(/platform\.[a-z_]+\b/giu)) {
-        // platform.getOrg() — это вызов соседа через его интерфейс, так можно.
-        // platform.orgs — это запрос к его таблице, так нельзя
-        if (/^platform\.[a-z_]+$/u.test(match[0]) && !/^platform\.(get|list|find)/u.test(match[0])) {
-          hits.push(`${file}: ${match[0]}`)
-        }
+      for (const match of code.matchAll(/\b(from|join|into|update|delete\s+from)\s+platform\.\w+/giu)) {
+        hits.push(`${file}: ${match[0]}`)
       }
     }
 
@@ -101,7 +121,7 @@ describe('зоны', () => {
   })
 
   it('зону не из справочника подрядчику не поставить', async () => {
-    const org = await makeOrg('Кофейня', '7701234567')
+    const org = await makeOrg('Кофейня', '7701234560')
     const contractor = await catalog.createContractor({ orgId: org.id })
 
     // Иначе в базе окажутся «msk-cao», «МСК-ЦАО» и «центр»,
@@ -121,7 +141,7 @@ describe('отбор кандидатов', () => {
       name: 'Демо-Чистый', inn: '7701000001', categoryIds: [cleaning], zones: ['msk-cao'],
     })
     await makeContractor({
-      name: 'Демо-Инженерка', inn: '7701000002', categoryIds: [hvac], zones: ['msk-cao'],
+      name: 'Демо-Инженерка', inn: '7701000019', categoryIds: [hvac], zones: ['msk-cao'],
     })
 
     const found = await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk-cao' })
@@ -154,7 +174,7 @@ describe('отбор кандидатов', () => {
       zones: ['msk'], status: 'paused',
     })
     await makeContractor({
-      name: 'Демо-Блок', inn: '7701000002', categoryIds: [cleaning],
+      name: 'Демо-Блок', inn: '7701000019', categoryIds: [cleaning],
       zones: ['msk'], status: 'blocked',
     })
 
@@ -168,18 +188,39 @@ describe('отбор кандидатов', () => {
       name: 'Демо-Троечник', inn: '7701000001', categoryIds: [cleaning], zones: ['msk'], rating: 3,
     })
     const best = await makeContractor({
-      name: 'Демо-Отличник', inn: '7701000002', categoryIds: [cleaning], zones: ['msk'], rating: 5,
+      name: 'Демо-Отличник', inn: '7701000019', categoryIds: [cleaning], zones: ['msk'], rating: 5,
     })
 
     const found = await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk' })
     expect(found[0]?.id).toBe(best.id)
   })
 
+  it('неоценённый подрядчик не встаёт впереди сильного', async () => {
+    // PostgreSQL при сортировке по убыванию ставит пустые значения первыми.
+    // Из-за этого тот, кого ещё никто не оценивал, оказывался впереди
+    // пятизвёздочного — и заказчик видел его первым предложением
+    const cleaning = await makeCategory('cleaning', 'Клининг')
+    const best = await makeContractor({
+      name: 'Демо-Отличник', inn: '7701000019', categoryIds: [cleaning], zones: ['msk'], rating: 5,
+    })
+    const unrated = await makeContractor({
+      name: 'Демо-Новичок', inn: '7701000026', categoryIds: [cleaning], zones: ['msk'],
+      rating: null,
+    })
+
+    const found = await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk' })
+    expect(found.map((c) => c.id)).toEqual([best.id, unrated.id])
+
+    // То же и в списке оператора: два экрана не должны сортировать по-разному
+    const listed = await catalog.listContractors({})
+    expect(listed.map((c) => c.id)).toEqual([best.id, unrated.id])
+  })
+
   it('не отдаёт больше, чем просили', async () => {
     const cleaning = await makeCategory('cleaning', 'Клининг')
     for (let i = 0; i < 4; i += 1) {
       await makeContractor({
-        name: `Демо-${i}`, inn: `770100000${i}`, categoryIds: [cleaning], zones: ['msk'],
+        name: `Демо-${i}`, inn: DEMO_INNS[i]!, categoryIds: [cleaning], zones: ['msk'],
       })
     }
     expect(await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk', limit: 2 }))
@@ -410,9 +451,237 @@ describe('витрина', () => {
     })
   })
 
+  it('карточки неоценённого подрядчика не встают впереди сильного', async () => {
+    // Та же ловушка, что и в отборе кандидатов: без `nulls last` PostgreSQL
+    // ставит подрядчика без оценки первым, и клиент видит его первой карточкой
+    const { cleaning, contractor } = await makeStorefront()
+    const newcomer = await makeContractor({
+      name: 'Демо-Новичок', inn: '7701000019',
+      categoryIds: [cleaning], zones: ['msk-cao'], rating: null,
+    })
+    await makeListing({
+      contractorId: newcomer.id, categoryId: cleaning, title: 'От новичка', rubles: 1000,
+    })
+    await makeListing({
+      contractorId: contractor.id, categoryId: cleaning, title: 'От сильного', rubles: 9000,
+    })
+
+    const found = await catalog.searchListings({ categoryId: cleaning })
+    // Сильный первым, хотя его карточка дороже: цена решает внутри равных
+    expect(found.items.map((i) => i.title)).toEqual(['От сильного', 'От новичка'])
+  })
+
   it('несуществующую зону отклоняет, а не показывает пустую витрину', async () => {
     await expect(catalog.searchListings({ zoneCode: 'опечатка' })).rejects.toMatchObject({
       code: 'unknown_zone',
     })
+  })
+})
+
+describe('саморегистрация подрядчика', () => {
+  const form = {
+    inn: '7701234560',
+    legalForm: 'company' as const,
+    companyName: 'Демо-СанПро',
+    fullName: 'Игорь Соколов',
+    position: 'Директор',
+    email: 'igor@example.ru',
+    phone: '+79160000001',
+    password: 'корова лошадь батарейка',
+  }
+
+  it('подрядчик заводит себя сам и ждёт проверки в черновике', async () => {
+    const { contractorId, orgId } = await catalog.registerContractor(form)
+
+    const card = await catalog.getContractor(contractorId)
+    // Заявок не получает, пока ИНН не проверен
+    expect(card.status).toBe('draft')
+
+    const org = await platform.getOrg(orgId)
+    expect(org.isContractor).toBe(true)
+    expect(org.innVerifiedAt).toBeNull()
+  })
+
+  it('регистрация публикует событие — проверка пойдёт следом', async () => {
+    const { contractorId } = await catalog.registerContractor(form)
+
+    const [event] = (await platform.claimOutboxBatch(10)).filter(
+      (e) => e.type === 'contractor.registered',
+    )
+    expect(event?.aggregateId).toBe(contractorId)
+    expect(event?.payload.inn).toBe('7701234560')
+
+    // ФИО в событие не кладём: персональные данные живут в одном месте
+    expect(JSON.stringify(event?.payload)).not.toContain('Соколов')
+  })
+
+  it('опечатку в ИНН ловит до всякого справочника', async () => {
+    // «Проверьте номер» и «компания не найдена» — разные вещи и разные
+    // следующие шаги; справочник платный, дёргать его на опечатку незачем
+    await expect(catalog.registerContractor({ ...form, inn: '7701234561' })).rejects.toMatchObject({
+      code: 'bad_inn',
+    })
+  })
+
+  it('повторная регистрация с тем же ИНН не создаёт вторую компанию', async () => {
+    await catalog.registerContractor(form)
+
+    await expect(
+      catalog.registerContractor({ ...form, email: 'other@example.ru', phone: '+79160000002' }),
+    ).rejects.toBeInstanceOf(CatalogError)
+
+    // Компания осталась одна — иначе на одно юрлицо было бы две записи
+    const db = getDb()
+    const [row] = await db.execute<{ n: number }>(
+      sql`select count(*)::int as n from platform.orgs where inn = '7701234560'`,
+    )
+    expect(row?.n).toBe(1)
+  })
+
+  it('уже зарегистрированная компания может стать подрядчиком', async () => {
+    // Одна и та же компания вправе и заказывать, и выполнять (§1)
+    const registered = await platform.register({
+      legalForm: 'company',
+      companyName: 'Кофейня «Пример»',
+      inn: '7701234560',
+      fullName: 'Анна Ковалёва',
+      email: 'anna@example.ru',
+      phone: '+79161234567',
+      password: 'корова лошадь батарейка',
+    })
+
+    const { orgId, contractorId } = await catalog.registerContractor({
+      ...form,
+      fullName: 'Анна Ковалёва',
+      email: 'anna@example.ru',
+    })
+
+    expect(orgId).toBe(registered.orgId)
+    expect((await catalog.getContractor(contractorId)).status).toBe('draft')
+  })
+})
+
+describe('проверка ИНН', () => {
+  async function registerOne() {
+    return catalog.registerContractor({
+      inn: '7701234560',
+      legalForm: 'company',
+      companyName: 'Демо-СанПро',
+      fullName: 'Игорь Соколов',
+      email: 'igor@example.ru',
+      phone: '+79160000001',
+      password: 'корова лошадь батарейка',
+    })
+  }
+
+  it('недоступный справочник не ломает регистрацию, а отправляет её оператору', async () => {
+    const { contractorId, orgId } = await registerOne()
+
+    // Справочник не подключён — именно это состояние сейчас и есть
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: false,
+      details: { status: 'unavailable', reason: 'справочник не подключён' },
+    })
+
+    // Подрядчик жив и ждёт человека, а не получил отказ
+    expect((await catalog.getContractor(contractorId)).status).toBe('draft')
+    expect((await catalog.pendingVerification()).map((c) => c.id)).toContain(contractorId)
+
+    // И мы помним, почему не проверили: через полгода надо уметь ответить
+    const org = await platform.getOrg(orgId)
+    expect(org.innVerifiedAt).toBeNull()
+  })
+
+  it('подтверждённый ИНН включает подрядчика', async () => {
+    const { contractorId, orgId } = await registerOne()
+
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: true,
+      details: { status: 'found', name: 'ООО «Демо-СанПро»', active: true },
+    })
+
+    expect((await catalog.getContractor(contractorId)).status).toBe('active')
+    expect((await platform.getOrg(orgId)).innVerifiedAt).toBeInstanceOf(Date)
+  })
+
+  it('повторный итог ничего не ломает', async () => {
+    const { contractorId } = await registerOne()
+    const verdict = {
+      contractorId,
+      verified: true,
+      details: { status: 'found' as const, active: true },
+    }
+
+    // Событие может прийти дважды (§5) — второй раз не должен ничего менять
+    await catalog.applyInnVerdict(verdict)
+    await catalog.applyInnVerdict(verdict)
+
+    expect((await catalog.getContractor(contractorId)).status).toBe('active')
+  })
+
+  it('решение оператора сильнее машинного', async () => {
+    const { contractorId } = await registerOne()
+    await catalog.setContractorStatus(contractorId, 'blocked')
+
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: true,
+      details: { status: 'found', active: true },
+    })
+
+    // Заблокированного оператором справочник разблокировать не может
+    expect((await catalog.getContractor(contractorId)).status).toBe('blocked')
+  })
+})
+
+describe('события об итоге проверки', () => {
+  async function registerAndClear() {
+    const r = await catalog.registerContractor({
+      inn: '7701234560',
+      legalForm: 'company',
+      companyName: 'Демо-СанПро',
+      fullName: 'Игорь Соколов',
+      email: 'igor@example.ru',
+      phone: '+79160000001',
+      password: 'корова лошадь батарейка',
+    })
+    await platform.claimOutboxBatch(50)
+    const db = getDb()
+    await db.execute(sql`update platform.outbox set processed_at = now()`)
+    return r
+  }
+
+  it('подтверждение публикует contractor.verified', async () => {
+    const { contractorId } = await registerAndClear()
+    await catalog.applyInnVerdict({ contractorId, verified: true, details: { status: 'found' } })
+
+    const events = await platform.claimOutboxBatch(10)
+    expect(events.map((e) => e.type)).toEqual(['contractor.verified'])
+  })
+
+  it('отказ публикует contractor.rejected', async () => {
+    const { contractorId } = await registerAndClear()
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: false,
+      details: { status: 'unavailable' },
+    })
+
+    const events = await platform.claimOutboxBatch(10)
+    expect(events.map((e) => e.type)).toEqual(['contractor.rejected'])
+  })
+
+  it('повторный итог второго события не создаёт', async () => {
+    const { contractorId } = await registerAndClear()
+    const verdict = { contractorId, verified: true, details: { status: 'found' as const } }
+
+    await catalog.applyInnVerdict(verdict)
+    await catalog.applyInnVerdict(verdict)
+
+    // Иначе подрядчик получил бы два письма об одном и том же
+    const events = await platform.claimOutboxBatch(10)
+    expect(events).toHaveLength(1)
   })
 })

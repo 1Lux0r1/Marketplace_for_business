@@ -56,7 +56,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Чистый Свет',
-    inn: '7701000002',
+    inn: '7701000019',
     person: 'Марина Гущина',
     email: 'demo-cleaning@example.ru',
     phone: '+79160000002',
@@ -66,7 +66,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Инженерка',
-    inn: '7701000003',
+    inn: '7701000026',
     person: 'Павел Тарасов',
     email: 'demo-eng@example.ru',
     phone: '+79160000003',
@@ -76,7 +76,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Охрана труда',
-    inn: '7701000004',
+    inn: '7701000033',
     person: 'Елена Бирюкова',
     email: 'demo-safety@example.ru',
     phone: '+79160000004',
@@ -86,7 +86,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Снабжение',
-    inn: '7701000005',
+    inn: '7701000040',
     person: 'Артём Логинов',
     email: 'demo-supply@example.ru',
     phone: '+79160000005',
@@ -188,10 +188,20 @@ async function main(): Promise<void> {
 
   const db = getDb()
 
-  // Повторный запуск безопасен: убираем только то, что засеяли сами
-  await db.execute(sql`
-    delete from catalog.contractors
-    where org_id in (select id from platform.orgs where name like 'Демо-%')`)
+  /**
+   * Повторный запуск безопасен: убираем только то, что засеяли сами.
+   *
+   * Порядок важен и сам по себе является проверкой: на компанию ссылаются
+   * люди и точки, и удалять её надо после них. `credentials` и `sessions`
+   * уходят следом за человеком сами — у них связь с удалением.
+   *
+   * Демо-компания может обрасти людьми и точками не только от сида: её заводят
+   * руками, проверяя экраны. Поэтому чистим по ссылке на компанию, а не по имени.
+   */
+  const demoOrgs = sql`select id from platform.orgs where name like 'Демо-%'`
+  await db.execute(sql`delete from catalog.contractors where org_id in (${demoOrgs})`)
+  await db.execute(sql`delete from platform.org_sites where org_id in (${demoOrgs})`)
+  await db.execute(sql`delete from platform.users where org_id in (${demoOrgs})`)
   await db.execute(sql`delete from platform.orgs where name like 'Демо-%'`)
 
   console.log('Категории...')

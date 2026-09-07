@@ -26,10 +26,18 @@ export function verifyEmailAction(): Promise<FormResult> {
   return Promise.resolve(noServer)
 }
 
+export function resendCodeAction(): Promise<FormResult> {
+  return Promise.resolve(noServer)
+}
+
 export function loginAction(): Promise<FormResult> {
   return Promise.resolve(noServer)
 }
 
 export function logoutAction(): Promise<void> {
   return Promise.resolve()
+}
+
+export function setPasswordAction(): Promise<FormResult> {
+  return Promise.resolve(noServer)
 }

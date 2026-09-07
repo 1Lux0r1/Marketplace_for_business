@@ -44,6 +44,12 @@ const schema = z.object({
   AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
   AI_SERVICE_ENABLED: bool.default(false),
 
+  // Справочник компаний по ИНН. `none` — заглушка: регистрация работает,
+  // проверка уходит оператору руками (Q20)
+  INN_LOOKUP_PROVIDER: z.string().default('none'),
+  INN_LOOKUP_TOKEN: z.string().optional(),
+  INN_LOOKUP_TIMEOUT_MS: z.coerce.number().int().positive().default(3000),
+
   COMMISSION_RATE_SERVICES: z.coerce.number().gt(0).lt(1).default(0.13),
   COMMISSION_RATE_GOODS: z.coerce.number().gt(0).lt(1).default(0.07),
 })

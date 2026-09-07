@@ -43,6 +43,18 @@ export const isKnownZone = zones.isKnownZone
 // ─── Подрядчики ─────────────────────────────────────────────────────────
 
 export const createContractor = service.createContractor
+
+/**
+ * Подрядчик заводит себя сам. Проверка ИНН идёт следом отдельным процессом:
+ * ни один внешний вызов не может остановить регистрацию.
+ */
+export const registerContractor = service.registerContractor
+
+/** Итог проверки ИНН — вызывается воркером. Идемпотентна. */
+export const applyInnVerdict = service.applyInnVerdict
+
+/** Кто ждёт ручной проверки: очередь оператора. */
+export const pendingVerification = service.pendingVerification
 export const getContractor = service.getContractor
 export const findContractorByOrg = service.findContractorByOrg
 export const listContractors = service.listContractors

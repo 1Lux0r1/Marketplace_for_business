@@ -17,11 +17,14 @@ const org = (over: Partial<Org> = {}): Org => ({
   legalForm: 'company',
   name: 'Кофейня «Пример»',
   inn: '7701234567',
+  kpp: '770101001',
+  legalAddress: 'Москва, ул. Примерная, 1',
   isClient: true,
   isContractor: false,
   isPlatform: false,
   isActive: true,
   innVerifiedAt: null,
+  innVerification: null,
   ...over,
 })
 

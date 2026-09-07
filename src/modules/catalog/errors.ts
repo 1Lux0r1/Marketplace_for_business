@@ -18,6 +18,8 @@ export type CatalogErrorCode =
   | 'listing_not_found'
   | 'org_not_found'
   | 'org_already_contractor'
+  | 'org_belongs_to_someone_else'
+  | 'bad_inn'
   | 'unknown_zone'
   | 'zone_not_covered'
   | 'bad_price'
@@ -33,6 +35,12 @@ export const errors = {
     ),
   orgAlreadyContractor: () =>
     new CatalogError('org_already_contractor', 'Эта компания уже заведена как подрядчик'),
+  orgBelongsToSomeoneElse: () =>
+    new CatalogError(
+      'org_belongs_to_someone_else',
+      'Компания с таким ИНН уже зарегистрирована. Войдите под своей учётной записью и включите роль подрядчика.',
+    ),
+  badInn: (why: string) => new CatalogError('bad_inn', why),
   unknownZone: (code: string) =>
     new CatalogError('unknown_zone', `Зоны «${code}» не существует. Выберите из списка.`),
   zoneNotCovered: (code: string) =>

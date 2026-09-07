@@ -185,6 +185,55 @@ export const loginAttempts = platform.table(
 )
 
 /**
+ * Точка клиента: адрес, на который приезжает подрядчик.
+ *
+ * Лежит в `platform`, а не в своём модуле, потому что точка не существует
+ * без компании и живёт по тем же правилам доступа, что и сама компания.
+ * Если она обрастёт своей логикой — графиками обслуживания, историей работ, —
+ * это будет перенос таблицы, а не переписывание.
+ *
+ * `zone_code` — текст без ссылки на `catalog.coverage_zones`: ссылки между
+ * схемами запрещены (§4.3). Целостность держит код: зона выбирается из списка
+ * `catalog.listZones()`, руками её не вводят. Опечатка здесь молча обнулила бы
+ * подбор — точка просто перестала бы находиться подрядчиками.
+ *
+ * Точки не удаляются, а убираются в архив: на них ссылаются заявки и сделки,
+ * и удалённая точка превратила бы историю заказов в ссылки в никуда.
+ */
+export const orgSites = platform.table(
+  'org_sites',
+  {
+    id: uuid('id').primaryKey(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => orgs.id),
+    /** Как точку называет сам клиент: «Кофейня на Тверской», а не адрес. */
+    name: text('name').notNull(),
+    address: text('address').notNull(),
+    zoneCode: text('zone_code').notNull(),
+    /** Кому звонить на этой точке, если это не владелец. */
+    contactName: text('contact_name'),
+    contactPhone: text('contact_phone'),
+    /** Как попасть внутрь: код домофона, часы, где вход со двора. */
+    note: text('note'),
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('org_sites_org_idx')
+      .on(t.orgId, t.createdAt)
+      .where(sql`${t.archivedAt} is null`),
+    /**
+     * Два одинаковых названия в одной компании — почти всегда случайная
+     * вторая отправка формы, а не две разные точки с одним именем
+     */
+    uniqueIndex('org_sites_name_key')
+      .on(t.orgId, sql`lower(${t.name})`)
+      .where(sql`${t.archivedAt} is null`),
+  ],
+)
+
+/**
  * Очередь событий. Изменение данных и запись события — одна транзакция (§5),
  * поэтому «сделка принята» и «письмо подрядчику» не могут разойтись: либо
  * записано и то, и другое, либо ничего.

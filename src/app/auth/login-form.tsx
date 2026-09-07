@@ -12,11 +12,15 @@ import { loginAction } from '@/server/auth-actions'
  * входа отвечает на вопрос «кто у вас зарегистрирован».
  */
 export function LoginForm({ onDone }: { onDone: () => void }) {
-  const [error, setError] = useState<string | null>(null)
+  const [problem, setProblem] = useState<{ text: string; field?: string | undefined } | null>(null)
   const [pending, startTransition] = useTransition()
 
+  /** Ошибка стоит у своего поля, а не только общей строкой внизу (§7.6). */
+  const at = (field: string) => (problem?.field === field ? problem.text : undefined)
+  const general = problem && !problem.field ? problem.text : null
+
   function submit(form: FormData) {
-    setError(null)
+    setProblem(null)
     startTransition(async () => {
       const result = await loginAction({
         login: String(form.get('login') ?? ''),
@@ -24,7 +28,7 @@ export function LoginForm({ onDone }: { onDone: () => void }) {
         remember: form.get('remember') === 'on',
       })
       if (result.ok) onDone()
-      else setError(result.error)
+      else setProblem({ text: result.error, field: result.field })
     })
   }
 
@@ -35,6 +39,7 @@ export function LoginForm({ onDone }: { onDone: () => void }) {
         name="login"
         autoComplete="username"
         placeholder="anna@example.ru"
+        error={at('login')}
         required
       />
       <Field
@@ -42,6 +47,7 @@ export function LoginForm({ onDone }: { onDone: () => void }) {
         name="password"
         type="password"
         autoComplete="current-password"
+        error={at('password')}
         required
       />
       <Checkbox
@@ -49,9 +55,9 @@ export function LoginForm({ onDone }: { onDone: () => void }) {
         label="Запомнить меня на 30 дней"
       />
 
-      {error && (
+      {general && (
         <p role="alert" className="text-body font-semibold text-err-strong">
-          {error}
+          {general}
         </p>
       )}
 

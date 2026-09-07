@@ -123,6 +123,25 @@ create table platform.sessions (
 create unique index on platform.sessions (token_hash);
 create index on platform.sessions (user_id);
 
+-- Точка клиента: адрес, куда приезжает подрядчик. Лежит здесь, а не в своём
+-- модуле, потому что не существует без компании и живёт по тем же правилам
+-- доступа. zone_code — текст без ссылки на catalog.coverage_zones: ссылки
+-- между схемами запрещены, целостность держит код
+create table platform.org_sites (
+  id            uuid primary key,
+  org_id        uuid not null references platform.orgs(id),
+  name          text not null,        -- как называет её сам клиент
+  address       text not null,
+  zone_code     text not null,        -- из catalog.listZones(), руками не вводится
+  contact_name  text,
+  contact_phone text,
+  note          text,                 -- как попасть внутрь: код домофона, часы
+  archived_at   timestamptz,          -- убирается, а не удаляется
+  created_at    timestamptz not null default now()
+);
+create index on platform.org_sites (org_id, created_at) where archived_at is null;
+create unique index on platform.org_sites (org_id, lower(name)) where archived_at is null;
+
 -- Журнал событий: сердце системы
 create table platform.outbox (
   id            bigserial primary key,

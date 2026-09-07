@@ -82,7 +82,7 @@ export function ContractorForm({ categories, zones, existing }: Props) {
           name="inn"
           inputMode="numeric"
           className="num"
-          placeholder="7701234567"
+          placeholder="7701234560"
           hint="Компания должна быть уже зарегистрирована — заводить её отсюда нельзя"
           required
         />

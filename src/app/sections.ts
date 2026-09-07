@@ -44,7 +44,7 @@ const client: Section[] = [
   { href: '/catalog', label: 'Найти услугу', icon: 'search', group: 'client', ready: true },
   { href: '/orders', label: 'Мои заказы', icon: 'bag', group: 'client' },
   { href: '/documents', label: 'Документы и счета', icon: 'doc', group: 'client' },
-  { href: '/company', label: 'Компания', icon: 'building', group: 'client' },
+  { href: '/company', label: 'Компания', icon: 'building', group: 'client', ready: true },
 ]
 
 /** Подрядчик: публикует карточки, отвечает на предложения, закрывает работы. */
@@ -58,7 +58,16 @@ const contractor: Section[] = [
 
 /** Оператор: разбирает очередь и гасит споры. Системные термины ему можно (§7.1). */
 const operator: Section[] = [
-  { href: '/queue', label: 'Очередь', icon: 'inbox', group: 'staff' },
+  // Очередь оператора — это очередь проверки регистраций: пока справочник
+  // компаний не подключён (Q20), в неё попадает каждая новая. Появятся другие
+  // очереди — раздел станет общим, а адрес переедет на `/queue`.
+  {
+    href: '/operator/verification',
+    label: 'Очередь',
+    icon: 'inbox',
+    group: 'staff',
+    ready: true,
+  },
   { href: '/deals', label: 'Сделки', icon: 'deal', group: 'staff' },
   { href: '/operator/contractors', label: 'Подрядчики', icon: 'users', group: 'staff', ready: true },
   { href: '/disputes', label: 'Споры', icon: 'alert', group: 'staff' },

@@ -25,6 +25,9 @@ export type PlatformErrorCode =
   | 'weak_password'
   | 'bad_phone'
   | 'bad_email'
+  | 'bad_inn'
+  | 'inn_required'
+  | 'too_long'
   | 'token_expired'
   | 'token_used'
   | 'token_unknown'
@@ -33,9 +36,21 @@ export type PlatformErrorCode =
   | 'not_verified'
   | 'forbidden'
   | 'platform_org_exists'
+  | 'site_not_found'
+  | 'site_name_taken'
+  | 'bad_site'
+  | 'bad_org'
 
 export const errors = {
   orgNotFound: () => new PlatformError('org_not_found', 'Компания не найдена'),
+  siteNotFound: () => new PlatformError('site_not_found', 'Такой точки нет'),
+  siteNameTaken: () =>
+    new PlatformError(
+      'site_name_taken',
+      'Точка с таким названием уже есть. Назовите её иначе, чтобы не путать.',
+    ),
+  badSite: (why: string) => new PlatformError('bad_site', why),
+  badOrg: (why: string) => new PlatformError('bad_org', why),
   userNotFound: () => new PlatformError('user_not_found', 'Пользователь не найден'),
   emailTaken: () =>
     new PlatformError('email_taken', 'На этот адрес уже есть учётная запись. Попробуйте войти.'),
@@ -49,12 +64,32 @@ export const errors = {
   weakPassword: (why: string) => new PlatformError('weak_password', why),
   badPhone: (why: string) => new PlatformError('bad_phone', why),
   badEmail: () => new PlatformError('bad_email', 'Проверьте адрес почты: похоже, в нём опечатка'),
+  badInn: (why: string) => new PlatformError('bad_inn', why),
+  innRequired: () =>
+    new PlatformError(
+      'inn_required',
+      'Укажите ИНН: без него мы не выпустим ни договор, ни счёт.',
+    ),
+  tooLong: (why: string) => new PlatformError('too_long', why),
   tokenExpired: () =>
     new PlatformError('token_expired', 'Срок ссылки истёк. Запросите новую — это займёт минуту.'),
   tokenUsed: () =>
     new PlatformError('token_used', 'Этой ссылкой уже воспользовались. Запросите новую.'),
   tokenUnknown: () =>
     new PlatformError('token_unknown', 'Ссылка не подходит. Проверьте, что скопировали её целиком.'),
+  /**
+   * Тексты для кода из письма отдельно от текстов для ссылки: человек,
+   * который вводит шесть цифр, не понимает совета «скопируйте ссылку целиком».
+   */
+  codeExpired: () =>
+    new PlatformError(
+      'token_expired',
+      'Срок кода истёк. Нажмите «Отправить код ещё раз» — придёт новый.',
+    ),
+  codeUsed: () =>
+    new PlatformError('token_used', 'Этот код уже использован. Запросите новый.'),
+  codeUnknown: () =>
+    new PlatformError('token_unknown', 'Код не подходит. Проверьте цифры из письма.'),
   tooManyAttempts: (minutes: number) =>
     new PlatformError(
       'too_many_attempts',
