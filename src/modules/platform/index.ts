@@ -30,10 +30,14 @@ export const getPlatformOrg = service.getPlatformOrg
 /** Включить роль подрядчика: отдельное действие, а не флажок при регистрации. */
 export const enableContractorRole = service.enableContractorRole
 
+/** Результат проверки ИНН — пишется всегда, даже когда справочник промолчал. */
+export const recordInnVerification = service.recordInnVerification
+
 // ─── Люди ───────────────────────────────────────────────────────────────
 
 export const getUser = service.getUser
 export const findUserByEmail = service.findUserByEmail
+export const findOrgOwner = service.findOrgOwner
 
 // ─── Права ──────────────────────────────────────────────────────────────
 

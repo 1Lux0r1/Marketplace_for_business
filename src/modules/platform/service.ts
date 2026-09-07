@@ -79,6 +79,46 @@ export async function getPlatformOrg(): Promise<Org | null> {
 }
 
 /**
+ * Записать результат проверки ИНН.
+ *
+ * Пишется ВСЕГДА — и когда проверили, и когда справочник промолчал. Через
+ * полгода надо уметь ответить, на основании чего компанию пустили на площадку;
+ * «мы не помним» — не ответ. Поэтому в `inn_verification` ложится весь ответ
+ * целиком, а не флажок.
+ *
+ * `inn_verified_at` заполняется только при настоящем подтверждении: по нему
+ * витрина показывает «ИНН проверен», и ставить его на «не смогли проверить»
+ * значит врать клиенту в том самом месте, где он решает, доверять ли.
+ */
+export async function recordInnVerification(input: {
+  orgId: string
+  verified: boolean
+  details: Record<string, unknown>
+}): Promise<{ org: Org; wasFirst: boolean }> {
+  const db = getDb()
+
+  const [before] = await db
+    .select({ verification: orgs.innVerification })
+    .from(orgs)
+    .where(eq(orgs.id, input.orgId))
+    .limit(1)
+  if (!before) throw errors.orgNotFound()
+
+  const [row] = await db
+    .update(orgs)
+    .set({
+      innVerifiedAt: input.verified ? new Date() : null,
+      innVerification: { ...input.details, checkedAt: new Date().toISOString() },
+    })
+    .where(eq(orgs.id, input.orgId))
+    .returning()
+
+  // `wasFirst` нужен, чтобы повторная доставка события не породила второе
+  // сообщение подрядчику: событие может прийти дважды (§5)
+  return { org: toOrg(row!), wasFirst: before.verification === null }
+}
+
+/**
  * Включить роль подрядчика. Отдельное действие, а не флажок при регистрации:
  * выполнять работы нельзя, не пройдя проверку и не подписав договор.
  */
@@ -141,6 +181,24 @@ export async function getUser(id: string): Promise<User> {
   const [row] = await db.select().from(users).where(eq(users.id, id)).limit(1)
   if (!row) throw errors.userNotFound()
   return toUser(row)
+}
+
+/**
+ * Владелец компании. Нужен там, где надо сверить заявленное ФИО с реестром.
+ *
+ * Отдельная функция, а не поле в событии: ФИО — персональные данные, и они
+ * должны лежать в одном месте. Скопировать их в очередь событий значит
+ * завести вторую копию, которую никто не чистит.
+ */
+export async function findOrgOwner(orgId: string): Promise<User | null> {
+  const db = getDb()
+  const [row] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.orgId, orgId), eq(users.role, 'owner')))
+    .orderBy(users.createdAt)
+    .limit(1)
+  return row ? toUser(row) : null
 }
 
 export async function findUserByEmail(email: string, exec?: Executor): Promise<User | null> {
