@@ -1,5 +1,15 @@
 import Link from 'next/link'
-import { EmptyState, PromoTag, StatusBadge, cx } from '@/ui'
+import {
+  Button,
+  CategoryArt,
+  Chip,
+  EmptyState,
+  GuaranteeBand,
+  GuaranteeLine,
+  Rating,
+  VerifiedMark,
+} from '@/ui'
+import { formatKopecks } from '@/shared/money'
 import type { StorefrontCard } from '@/server/storefront-queries'
 import type { Category, Zone } from '@/modules/catalog'
 
@@ -10,10 +20,18 @@ import type { Category, Zone } from '@/modules/catalog'
  * оформления не должны сталкиваться с правками логики в одном файле. Данные
  * и состояния собирает `page.tsx`, сюда они приходят готовыми.
  *
+ * Оформлено по утверждённым макетам `design/Main.dc.html` и `Listing.dc.html`.
+ * Витрина продаёт, а рабочие экраны работают (§7): здесь есть иллюстрация,
+ * крупная цена и обещание гаранта — то, чего в сделке и документах не будет.
+ *
+ * Чего в макете есть, а здесь нет, и почему: бейджа скидки («−15 %») и числа
+ * закрытых заказов. Ни того ни другого нет в данных, а выдумывать их нельзя
+ * (§9.7). Появятся поля — появятся и они, места под них оставлены.
+ *
  * Что оформление обязано сохранить, меняя всё остальное:
  *
- * - цена — из `priceKopecks`, делится на 100 только при выводе (§6);
- * - «проверенный ИНН» показывается только когда `innVerified` истинно —
+ * - цена выводится через `formatKopecks` и никак иначе (§6);
+ * - «проверен» показывается только когда `innVerified` истинно —
  *   это часть обещания площадки, а не украшение;
  * - у пустого результата остаётся кнопка сброса фильтра (§7.4);
  * - таблиц вместо карточек на витрине быть не должно (§7).
@@ -40,12 +58,7 @@ export function Filters({
           aria-label="Поиск по услугам"
           className="h-11 min-w-0 flex-1 rounded-pill border border-line-strong bg-surface px-4 text-body text-ink placeholder:text-ink-3"
         />
-        <button
-          type="submit"
-          className="h-11 rounded-control bg-accent px-[18px] text-body font-semibold text-on-accent"
-        >
-          Найти
-        </button>
+        <Button type="submit">Найти</Button>
       </form>
 
       <ChipRow
@@ -80,21 +93,16 @@ function ChipRow({
   current: { category?: string | undefined; zone?: string | undefined; q?: string | undefined }
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-caption font-bold tracking-wide text-ink-3 uppercase">{label}</span>
+    <div className="flex flex-wrap items-center gap-2.5">
+      <span className="text-label font-bold tracking-[0.08em] text-ink-3 uppercase">{label}</span>
       {options.map((option) => (
-        <Link
+        <Chip
           key={option.value || 'any'}
           href={buildHref({ ...current, [param]: option.value || undefined })}
-          className={cx(
-            'inline-flex min-h-11 items-center rounded-pill border px-3.5 text-table font-semibold',
-            selected === option.value
-              ? 'border-accent bg-accent-tint text-accent-strong'
-              : 'border-line-strong text-ink-2 hover:bg-surface-2',
-          )}
+          selected={selected === option.value}
         >
           {option.label}
-        </Link>
+        </Chip>
       ))}
     </div>
   )
@@ -112,38 +120,45 @@ export function Grid({ items }: { items: StorefrontCard[] }) {
 
 function ListingCard({ item }: { item: StorefrontCard }) {
   return (
-    <article className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5 shadow-card">
-      <div className="flex items-start justify-between gap-3">
-        <span className="text-caption font-semibold text-ink-3">{item.categoryName}</span>
-        {item.innVerified && <StatusBadge tone="ok">ИНН проверен</StatusBadge>}
+    <article className="relative flex flex-col overflow-hidden rounded-card border border-line bg-surface shadow-card transition-shadow duration-150 hover:shadow-raised">
+      <CategoryArt categoryCode={item.categoryCode} className="h-[132px]" />
+
+      <div className="flex flex-1 flex-col gap-2.5 p-5">
+        <span className="text-label font-bold tracking-[0.08em] text-ink-3 uppercase">
+          {item.categoryName}
+        </span>
+
+        {/* Ссылка растянута на всю карточку: на витрине человек целится
+            в карточку, а не в её заголовок */}
+        <h2 className="text-lead font-extrabold text-ink">
+          <Link href={`/catalog?id=${item.id}`} className="after:absolute after:inset-0 hover:text-accent-strong">
+            {item.title}
+          </Link>
+        </h2>
+
+        {item.description && (
+          <p className="line-clamp-2 text-table text-ink-2">{item.description}</p>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-caption text-ink-3">
+          <span className="text-ink-2">{item.contractorName}</span>
+          {item.innVerified && <VerifiedMark />}
+          <Rating value={item.contractorRating} />
+        </div>
+
+        {/* Цена внизу и одинаково у всех карточек: её сравнивают взглядом
+            по сетке, а не ищут в каждой карточке заново */}
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-2">
+          <span className="num text-page font-extrabold text-ink">
+            {formatKopecks(item.priceKopecks)}
+          </span>
+          <span className="text-table text-ink-3">за {item.unit}</span>
+        </div>
+
+        {item.leadTimeHours !== null && (
+          <p className="text-caption text-ink-3">Готовы приступить через {hours(item.leadTimeHours)}</p>
+        )}
       </div>
-
-      <h2 className="text-section font-extrabold text-ink">
-        <Link href={`/catalog?id=${item.id}`} className="hover:text-accent-strong">
-          {item.title}
-        </Link>
-      </h2>
-
-      {item.description && (
-        <p className="line-clamp-3 text-body text-ink-2">{item.description}</p>
-      )}
-
-      <div className="mt-auto flex flex-wrap items-baseline gap-x-2 gap-y-1 pt-2">
-        <span className="num text-page font-extrabold text-ink">{rubles(item.priceKopecks)}</span>
-        <span className="text-body text-ink-3">за {item.unit}</span>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-caption text-ink-3">
-        <span>{item.contractorName}</span>
-        {item.leadTimeHours !== null && <span>· готовы через {hours(item.leadTimeHours)}</span>}
-      </div>
-
-      <Link
-        href={`/catalog?id=${item.id}`}
-        className="inline-flex h-11 items-center justify-center rounded-control bg-accent text-body font-semibold text-on-accent"
-      >
-        Посмотреть
-      </Link>
     </article>
   )
 }
@@ -159,12 +174,9 @@ export function NothingFound({ hasFilters }: { hasFilters: boolean }) {
       }
       action={
         hasFilters ? (
-          <Link
-            href="/catalog"
-            className="inline-flex h-11 items-center rounded-control bg-accent px-[18px] text-body font-semibold text-on-accent"
-          >
+          <Button href="/catalog">
             Сбросить фильтры
-          </Link>
+          </Button>
         ) : undefined
       }
     />
@@ -188,12 +200,9 @@ export function NotPublished() {
       title="Такой услуги на витрине нет"
       description="Возможно, подрядчик снял её или ссылка устарела. Посмотрите, что есть сейчас."
       action={
-        <Link
-          href="/catalog"
-          className="inline-flex h-11 items-center rounded-control bg-accent px-[18px] text-body font-semibold text-on-accent"
-        >
+        <Button href="/catalog">
           Ко всем услугам
-        </Link>
+        </Button>
       }
     />
   )
@@ -204,56 +213,75 @@ export function ListingDetails({ item }: { item: StorefrontCard }) {
     <div className="flex flex-col gap-7">
       <Link
         href="/catalog"
-        className="inline-flex min-h-11 items-center self-start text-body font-semibold text-accent-strong"
+        className="inline-flex min-h-11 items-center self-start text-body font-semibold text-accent-strong hover:text-accent"
       >
         ← ко всем услугам
       </Link>
 
-      <header className="flex flex-col gap-3">
-        <span className="text-caption font-semibold text-ink-3">{item.categoryName}</span>
-        <h1 className="max-w-[24ch] text-display font-extrabold text-ink">{item.title}</h1>
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="num text-display font-extrabold text-ink">
-            {rubles(item.priceKopecks)}
-          </span>
-          <span className="text-lead text-ink-3">за {item.unit}</span>
-          {Number(item.minQty) > 1 && (
-            <PromoTag>от {Number(item.minQty).toLocaleString('ru-RU')} {item.unit}</PromoTag>
+      <div className="grid gap-7 lg:grid-cols-[1fr_20rem] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-7">
+          <header className="flex flex-col gap-3">
+            <span className="text-label font-bold tracking-[0.08em] text-ink-3 uppercase">
+              {item.categoryName}
+            </span>
+            <h1 className="max-w-[24ch] text-page font-extrabold text-ink">{item.title}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="text-lead font-bold text-ink">{item.contractorName}</span>
+              {item.innVerified && <VerifiedMark label="ИНН проверен" />}
+              <Rating value={item.contractorRating} />
+            </div>
+          </header>
+
+          {item.description && (
+            <section className="flex flex-col gap-2">
+              <h2 className="text-section font-bold">Что входит в услугу</h2>
+              <p className="max-w-[70ch] text-body text-ink-2">{item.description}</p>
+            </section>
           )}
+
+          <Guarantee />
         </div>
-      </header>
 
-      {item.description && (
-        <section className="flex flex-col gap-2">
-          <h2 className="text-section font-extrabold">Что входит</h2>
-          <p className="max-w-[70ch] text-body text-ink-2">{item.description}</p>
-        </section>
-      )}
+        {/* Цена и заказ — отдельным блоком справа и липкие: на длинной странице
+            человек не должен возвращаться наверх, чтобы вспомнить цену */}
+        <aside className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5 shadow-card lg:sticky lg:top-6">
+          <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="num text-display font-extrabold text-ink">
+              {formatKopecks(item.priceKopecks)}
+            </span>
+            <span className="text-body text-ink-3">за {item.unit}</span>
+          </div>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-section font-extrabold">Кто выполняет</h2>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-lead font-bold text-ink">{item.contractorName}</span>
-          {item.innVerified && <StatusBadge tone="ok">ИНН проверен</StatusBadge>}
-        </div>
-        {item.leadTimeHours !== null && (
-          <p className="text-body text-ink-2">Готовы приступить через {hours(item.leadTimeHours)}.</p>
-        )}
-      </section>
+          {Number(item.minQty) > 1 && (
+            <p className="text-caption text-ink-2">
+              Минимальный заказ — {Number(item.minQty).toLocaleString('ru-RU')} {item.unit}
+            </p>
+          )}
+          {item.leadTimeHours !== null && (
+            <p className="text-caption text-ink-2">
+              Готовы приступить через {hours(item.leadTimeHours)}
+            </p>
+          )}
 
-      <Guarantee />
+          {/* Куда приедут — первый вопрос клиента, и ответ на него не должен
+              находиться только через фильтр */}
+          {item.zones.length > 0 && (
+            <p className="text-caption text-ink-2">
+              Выезд: <span className="text-ink">{item.zones.join(', ')}</span>
+            </p>
+          )}
 
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          disabled
-          className="inline-flex h-13 items-center justify-center rounded-control bg-accent px-6 text-lead font-semibold text-on-accent disabled:opacity-50"
-        >
-          Заказать
-        </button>
-        <p className="text-caption text-ink-3">
-          Заказ из каталога появится в четвёртом спринте — сейчас кнопка неактивна.
-        </p>
+          <Button size="lg" block disabled>
+            Заказать
+          </Button>
+          <p className="text-caption text-ink-3">
+            Заказ из каталога появится в четвёртом спринте — сейчас кнопка неактивна.
+          </p>
+
+          <div className="border-t border-line pt-3">
+            <GuaranteeLine />
+          </div>
+        </aside>
       </div>
     </div>
   )
@@ -262,35 +290,41 @@ export function ListingDetails({ item }: { item: StorefrontCard }) {
 /**
  * Обещание площадки. Это не украшение страницы, а то, за что берётся
  * комиссия (§1), поэтому написано на карточке каждой услуги.
+ *
+ * Шагами по порядку, а не списком свойств: человек спрашивает «что будет
+ * после того, как я нажму», и ответ на это — последовательность, а не набор.
  */
 function Guarantee() {
-  const points = [
-    ['Деньги ждут приёмки', 'Оплата лежит у площадки и уходит подрядчику только после того, как вы подписали акт.'],
-    ['Документы выпустим мы', 'Договор, счёт и акт — на нашей стороне, подписывать бумаги с подрядчиком не нужно.'],
-    ['Спор разбираем мы', 'Если работа сделана не так, деньги не уходят до разбора.'],
+  const steps = [
+    ['Вы платите площадке', 'Деньги приходят нам и удерживаются. Подрядчик их пока не видит.'],
+    ['Подрядчик выполняет работу', 'Мы держим срок и отвечаем на вопросы по ходу работ.'],
+    ['Вы принимаете работу', 'Подписываете акт. Что-то не так — заявляете рекламацию, деньги остаются у нас.'],
+    ['Подрядчик получает выплату', 'Только после подписанного акта, за вычетом комиссии.'],
   ]
 
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-line bg-surface-2 p-5">
-      <h2 className="text-section font-extrabold">Как защищена сделка</h2>
-      <dl className="flex flex-col gap-3">
-        {points.map(([title, text]) => (
-          <div key={title} className="flex flex-col gap-0.5">
-            <dt className="text-table font-bold text-ink">{title}</dt>
-            <dd className="max-w-[70ch] text-body text-ink-2">{text}</dd>
-          </div>
+    <section className="flex flex-col gap-4 rounded-card border border-accent bg-surface p-5">
+      <h2 className="text-section font-bold">Как защищена сделка</h2>
+      <ol className="flex flex-col gap-3.5">
+        {steps.map(([title, text], i) => (
+          <li key={title} className="flex gap-3.5">
+            <span className="num flex size-6 flex-none items-center justify-center rounded-full bg-accent-tint text-caption font-extrabold text-accent-strong">
+              {i + 1}
+            </span>
+            <div className="min-w-0">
+              <p className="text-table font-bold text-ink">{title}</p>
+              <p className="max-w-[70ch] text-table text-ink-2">{text}</p>
+            </div>
+          </li>
         ))}
-      </dl>
+      </ol>
     </section>
   )
 }
 
-// ─── Формат ─────────────────────────────────────────────────────────────
+export { GuaranteeBand }
 
-/** Копейки в рубли — только в слое отображения (§6). */
-function rubles(kopecks: bigint): string {
-  return `${Number(kopecks / 100n).toLocaleString('ru-RU')} ₽`
-}
+// ─── Формат ─────────────────────────────────────────────────────────────
 
 function hours(value: number): string {
   if (value < 24) return `${value} ч`

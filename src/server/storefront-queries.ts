@@ -24,6 +24,14 @@ export function isAvailable(): boolean {
 export type StorefrontCard = catalog.StorefrontListing & {
   contractorName: string
   innVerified: boolean
+  /**
+   * Код категории — для отраслевой иллюстрации на карточке.
+   *
+   * Берётся здесь, а не запрашивается у каталога отдельным полем: категории
+   * на страницу и так читаются целиком для фильтров, и это тот же список.
+   * Незнакомый код витрина переживает — рисует нейтральную картинку.
+   */
+  categoryCode: string
 }
 
 export type StorefrontPage = {
@@ -46,7 +54,7 @@ export async function storefront(input: {
   ])
 
   return {
-    items: await withContractorNames(found.items),
+    items: await withContractorNames(found.items, categories),
     total: found.total,
     categories,
     zones: catalog.listZones(),
@@ -69,10 +77,15 @@ export async function storefrontCard(id: string): Promise<StorefrontCard | null>
  */
 async function withContractorNames(
   listings: catalog.StorefrontListing[],
+  categories?: catalog.Category[],
 ): Promise<StorefrontCard[]> {
   const orgIds = [...new Set(listings.map((l) => l.contractorOrgId))]
-  const orgs = await Promise.all(orgIds.map((id) => platform.getOrg(id).catch(() => null)))
+  const [orgs, allCategories] = await Promise.all([
+    Promise.all(orgIds.map((id) => platform.getOrg(id).catch(() => null))),
+    categories ? Promise.resolve(categories) : catalog.listCategories({}),
+  ])
   const byId = new Map(orgs.filter((o) => o !== null).map((o) => [o.id, o]))
+  const codeById = new Map(allCategories.map((c) => [c.id, c.code]))
 
   return listings.map((listing) => {
     const org = byId.get(listing.contractorOrgId)
@@ -82,6 +95,7 @@ async function withContractorNames(
       // Проверенный ИНН — часть обещания площадки: клиент должен видеть,
       // что подрядчик не аноним
       innVerified: org?.innVerifiedAt !== null && org?.innVerifiedAt !== undefined,
+      categoryCode: codeById.get(listing.categoryId) ?? '',
     }
   })
 }

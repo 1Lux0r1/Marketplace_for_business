@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { cx } from './cx'
 
@@ -13,32 +14,53 @@ import { cx } from './cx'
  *
  * Высота 44 px: это минимальная целевая область, и пальцем в 28-пиксельный
  * чип не попасть (§7.5).
+ *
+ * С `href` становится ссылкой. Фильтры витрины живут в адресе, а не в памяти
+ * страницы: так фильтр переживает обновление, его можно переслать и вернуться
+ * к нему кнопкой «назад». Ссылка ещё и работает без единой строки на стороне
+ * браузера, что для витрины важно — её открывают с телефона в перерыве.
  */
 export function Chip({
   children,
   selected = false,
   onClick,
+  href,
   count,
 }: {
   children: ReactNode
   selected?: boolean
   onClick?: () => void
+  /** Чип-ссылка: фильтр меняет адрес, а не состояние страницы. */
+  href?: string
   count?: number
 }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      onClick={onClick}
-      className={cx(
+  const body = (
+    <>
+      {children}
+      {count !== undefined && <span className="num text-ink-3">{count}</span>}
+    </>
+  )
+
+  const look = cx(
         'inline-flex min-h-11 items-center gap-2 rounded-pill border px-4 text-table transition-colors duration-150',
         selected
           ? 'border-accent bg-accent-tint font-bold text-accent-strong'
           : 'border-line-strong bg-surface font-medium text-ink-2 hover:bg-surface-2 hover:text-ink',
-      )}
-    >
-      {children}
-      {count !== undefined && <span className="num text-ink-3">{count}</span>}
+  )
+
+  // У ссылки «выбран» передаётся через aria-current: aria-pressed — про кнопку,
+  // и на ссылке чтение с экрана его не поймёт
+  if (href) {
+    return (
+      <Link href={href} aria-current={selected ? 'true' : undefined} className={look}>
+        {body}
+      </Link>
+    )
+  }
+
+  return (
+    <button type="button" aria-pressed={selected} onClick={onClick} className={look}>
+      {body}
     </button>
   )
 }

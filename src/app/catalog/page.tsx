@@ -1,5 +1,6 @@
 import { isAvailable, storefront, storefrontCard } from '@/server/storefront-queries'
 import { CatalogError } from '@/modules/catalog'
+import { GuaranteeBand } from '@/ui'
 import { DemoWithoutDatabase, Filters, Grid, ListingDetails, NothingFound, NotPublished } from './catalog-view'
 
 /**
@@ -62,10 +63,14 @@ export default async function CatalogPage({
       <header className="flex flex-col gap-2">
         <h1 className="text-page font-extrabold">Найти услугу</h1>
         <p className="max-w-[70ch] text-body text-ink-2">
-          Выберите готовое решение с ценой. Договор, счёт и акт выпустим мы,
-          деньги подрядчик получит после того, как вы примете работу.
+          Готовые услуги с ценой от проверенных подрядчиков. Выбираете сами —
+          сделку ведём мы.
         </p>
       </header>
+
+      {/* Обещание гаранта стоит там, где человек выбирает, а не там, где уже
+          заплатил: это то, чем площадка отличается от доски объявлений (§1) */}
+      <GuaranteeBand />
 
       <Filters categories={page.categories} zones={page.zones} current={params} />
 

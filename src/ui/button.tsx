@@ -1,6 +1,7 @@
 'use client'
 
-import type { ButtonHTMLAttributes } from 'react'
+import Link from 'next/link'
+import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { cx } from './cx'
 
 /**
@@ -29,32 +30,34 @@ const sizes: Record<Size, string> = {
   lg: 'h-13 px-6 text-lead',
 }
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+type Common = {
   variant?: Variant
   size?: Size
   block?: boolean
+  className?: string
+  children?: ReactNode
 }
 
-export function Button({
-  variant = 'accent',
-  size = 'md',
-  block = false,
-  className,
-  type = 'button',
-  ...rest
-}: Props) {
-  return (
-    <button
-      type={type}
-      className={cx(
-        'inline-flex items-center justify-center gap-2 rounded-control border font-semibold',
-        'transition-[filter,background-color] duration-150 disabled:opacity-50 disabled:pointer-events-none',
-        variants[variant],
-        sizes[size],
-        block && 'w-full',
-        className,
-      )}
-      {...rest}
-    />
-  )
+type Props =
+  | (Common & ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined })
+  | (Common & { href: string })
+
+const base =
+  'inline-flex items-center justify-center gap-2 rounded-control border font-semibold ' +
+  'transition-[filter,background-color] duration-150 disabled:opacity-50 disabled:pointer-events-none'
+
+export function Button(props: Props) {
+  const { variant = 'accent', size = 'md', block = false, className } = props
+  const look = cx(base, variants[variant], sizes[size], block && 'w-full', className)
+
+  if (props.href !== undefined) {
+    return (
+      <Link href={props.href} className={look}>
+        {props.children}
+      </Link>
+    )
+  }
+
+  const { variant: _v, size: _s, block: _b, className: _c, href: _h, type = 'button', ...rest } = props
+  return <button type={type} className={look} {...rest} />
 }
