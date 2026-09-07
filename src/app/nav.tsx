@@ -24,7 +24,11 @@ export function Nav({ isOperator = false }: { isOperator?: boolean }) {
   // У оператора свой набор разделов (§7.1). Пока их два: подрядчики
   // и то, что уже было, — остальное появится вместе с очередью и спорами
   const visible = isOperator
-    ? [...sections, { href: '/operator/contractors', label: 'Подрядчики', Icon: BuildingIcon, count: 0 }]
+    ? [
+        ...sections,
+        { href: '/operator/verification', label: 'Очередь', Icon: DocIcon, count: 0 },
+        { href: '/operator/contractors', label: 'Подрядчики', Icon: BuildingIcon, count: 0 },
+      ]
     : sections
 
   return (

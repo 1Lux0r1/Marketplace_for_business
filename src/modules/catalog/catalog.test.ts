@@ -15,7 +15,7 @@ import { CatalogError } from './errors'
 beforeEach(async () => {
   const db = getDb()
   await db.execute(sql`truncate catalog.contractors, catalog.categories cascade`)
-  await db.execute(sql`truncate platform.orgs cascade`)
+  await db.execute(sql`truncate platform.orgs, platform.outbox restart identity cascade`)
 })
 
 afterAll(async () => {
@@ -87,19 +87,19 @@ describe('граница модулей', () => {
 
   it('в коде каталога нет ни одного запроса к таблицам platform', () => {
     // Правило §4.2, проверяемое, а не на словах: один такой запрос — и модули
-    // перестают выделяться в сервисы без переписывания
+    // перестают выделяться в сервисы без переписывания.
+    //
+    // Ищем именно запрос — «from platform.orgs», «join platform.users».
+    // Вызов соседа через его интерфейс (`platform.getOrg()`, `platform.publish()`)
+    // не только разрешён, но и есть единственный правильный способ (§4.4).
     const dir = 'src/modules/catalog'
     const files = readdirSync(dir).filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
     const hits: string[] = []
 
     for (const file of files) {
       const code = readFileSync(join(dir, file), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gmu, '')
-      for (const match of code.matchAll(/platform\.[a-z_]+\b/giu)) {
-        // platform.getOrg() — это вызов соседа через его интерфейс, так можно.
-        // platform.orgs — это запрос к его таблице, так нельзя
-        if (/^platform\.[a-z_]+$/u.test(match[0]) && !/^platform\.(get|list|find)/u.test(match[0])) {
-          hits.push(`${file}: ${match[0]}`)
-        }
+      for (const match of code.matchAll(/\b(from|join|into|update|delete\s+from)\s+platform\.\w+/giu)) {
+        hits.push(`${file}: ${match[0]}`)
       }
     }
 
@@ -437,5 +437,213 @@ describe('витрина', () => {
     await expect(catalog.searchListings({ zoneCode: 'опечатка' })).rejects.toMatchObject({
       code: 'unknown_zone',
     })
+  })
+})
+
+describe('саморегистрация подрядчика', () => {
+  const form = {
+    inn: '7701234560',
+    legalForm: 'company' as const,
+    companyName: 'Демо-СанПро',
+    fullName: 'Игорь Соколов',
+    position: 'Директор',
+    email: 'igor@example.ru',
+    phone: '+79160000001',
+    password: 'корова лошадь батарейка',
+  }
+
+  it('подрядчик заводит себя сам и ждёт проверки в черновике', async () => {
+    const { contractorId, orgId } = await catalog.registerContractor(form)
+
+    const card = await catalog.getContractor(contractorId)
+    // Заявок не получает, пока ИНН не проверен
+    expect(card.status).toBe('draft')
+
+    const org = await platform.getOrg(orgId)
+    expect(org.isContractor).toBe(true)
+    expect(org.innVerifiedAt).toBeNull()
+  })
+
+  it('регистрация публикует событие — проверка пойдёт следом', async () => {
+    const { contractorId } = await catalog.registerContractor(form)
+
+    const [event] = (await platform.claimOutboxBatch(10)).filter(
+      (e) => e.type === 'contractor.registered',
+    )
+    expect(event?.aggregateId).toBe(contractorId)
+    expect(event?.payload.inn).toBe('7701234560')
+
+    // ФИО в событие не кладём: персональные данные живут в одном месте
+    expect(JSON.stringify(event?.payload)).not.toContain('Соколов')
+  })
+
+  it('опечатку в ИНН ловит до всякого справочника', async () => {
+    // «Проверьте номер» и «компания не найдена» — разные вещи и разные
+    // следующие шаги; справочник платный, дёргать его на опечатку незачем
+    await expect(catalog.registerContractor({ ...form, inn: '7701234561' })).rejects.toMatchObject({
+      code: 'bad_inn',
+    })
+  })
+
+  it('повторная регистрация с тем же ИНН не создаёт вторую компанию', async () => {
+    await catalog.registerContractor(form)
+
+    await expect(
+      catalog.registerContractor({ ...form, email: 'other@example.ru', phone: '+79160000002' }),
+    ).rejects.toBeInstanceOf(CatalogError)
+
+    // Компания осталась одна — иначе на одно юрлицо было бы две записи
+    const db = getDb()
+    const [row] = await db.execute<{ n: number }>(
+      sql`select count(*)::int as n from platform.orgs where inn = '7701234560'`,
+    )
+    expect(row?.n).toBe(1)
+  })
+
+  it('уже зарегистрированная компания может стать подрядчиком', async () => {
+    // Одна и та же компания вправе и заказывать, и выполнять (§1)
+    const registered = await platform.register({
+      legalForm: 'company',
+      companyName: 'Кофейня «Пример»',
+      inn: '7701234560',
+      fullName: 'Анна Ковалёва',
+      email: 'anna@example.ru',
+      phone: '+79161234567',
+      password: 'корова лошадь батарейка',
+    })
+
+    const { orgId, contractorId } = await catalog.registerContractor({
+      ...form,
+      fullName: 'Анна Ковалёва',
+      email: 'anna@example.ru',
+    })
+
+    expect(orgId).toBe(registered.orgId)
+    expect((await catalog.getContractor(contractorId)).status).toBe('draft')
+  })
+})
+
+describe('проверка ИНН', () => {
+  async function registerOne() {
+    return catalog.registerContractor({
+      inn: '7701234560',
+      legalForm: 'company',
+      companyName: 'Демо-СанПро',
+      fullName: 'Игорь Соколов',
+      email: 'igor@example.ru',
+      phone: '+79160000001',
+      password: 'корова лошадь батарейка',
+    })
+  }
+
+  it('недоступный справочник не ломает регистрацию, а отправляет её оператору', async () => {
+    const { contractorId, orgId } = await registerOne()
+
+    // Справочник не подключён — именно это состояние сейчас и есть
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: false,
+      details: { status: 'unavailable', reason: 'справочник не подключён' },
+    })
+
+    // Подрядчик жив и ждёт человека, а не получил отказ
+    expect((await catalog.getContractor(contractorId)).status).toBe('draft')
+    expect((await catalog.pendingVerification()).map((c) => c.id)).toContain(contractorId)
+
+    // И мы помним, почему не проверили: через полгода надо уметь ответить
+    const org = await platform.getOrg(orgId)
+    expect(org.innVerifiedAt).toBeNull()
+  })
+
+  it('подтверждённый ИНН включает подрядчика', async () => {
+    const { contractorId, orgId } = await registerOne()
+
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: true,
+      details: { status: 'found', name: 'ООО «Демо-СанПро»', active: true },
+    })
+
+    expect((await catalog.getContractor(contractorId)).status).toBe('active')
+    expect((await platform.getOrg(orgId)).innVerifiedAt).toBeInstanceOf(Date)
+  })
+
+  it('повторный итог ничего не ломает', async () => {
+    const { contractorId } = await registerOne()
+    const verdict = {
+      contractorId,
+      verified: true,
+      details: { status: 'found' as const, active: true },
+    }
+
+    // Событие может прийти дважды (§5) — второй раз не должен ничего менять
+    await catalog.applyInnVerdict(verdict)
+    await catalog.applyInnVerdict(verdict)
+
+    expect((await catalog.getContractor(contractorId)).status).toBe('active')
+  })
+
+  it('решение оператора сильнее машинного', async () => {
+    const { contractorId } = await registerOne()
+    await catalog.setContractorStatus(contractorId, 'blocked')
+
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: true,
+      details: { status: 'found', active: true },
+    })
+
+    // Заблокированного оператором справочник разблокировать не может
+    expect((await catalog.getContractor(contractorId)).status).toBe('blocked')
+  })
+})
+
+describe('события об итоге проверки', () => {
+  async function registerAndClear() {
+    const r = await catalog.registerContractor({
+      inn: '7701234560',
+      legalForm: 'company',
+      companyName: 'Демо-СанПро',
+      fullName: 'Игорь Соколов',
+      email: 'igor@example.ru',
+      phone: '+79160000001',
+      password: 'корова лошадь батарейка',
+    })
+    await platform.claimOutboxBatch(50)
+    const db = getDb()
+    await db.execute(sql`update platform.outbox set processed_at = now()`)
+    return r
+  }
+
+  it('подтверждение публикует contractor.verified', async () => {
+    const { contractorId } = await registerAndClear()
+    await catalog.applyInnVerdict({ contractorId, verified: true, details: { status: 'found' } })
+
+    const events = await platform.claimOutboxBatch(10)
+    expect(events.map((e) => e.type)).toEqual(['contractor.verified'])
+  })
+
+  it('отказ публикует contractor.rejected', async () => {
+    const { contractorId } = await registerAndClear()
+    await catalog.applyInnVerdict({
+      contractorId,
+      verified: false,
+      details: { status: 'unavailable' },
+    })
+
+    const events = await platform.claimOutboxBatch(10)
+    expect(events.map((e) => e.type)).toEqual(['contractor.rejected'])
+  })
+
+  it('повторный итог второго события не создаёт', async () => {
+    const { contractorId } = await registerAndClear()
+    const verdict = { contractorId, verified: true, details: { status: 'found' as const } }
+
+    await catalog.applyInnVerdict(verdict)
+    await catalog.applyInnVerdict(verdict)
+
+    // Иначе подрядчик получил бы два письма об одном и том же
+    const events = await platform.claimOutboxBatch(10)
+    expect(events).toHaveLength(1)
   })
 })

@@ -1,75 +1,69 @@
 /**
- * ИНН: приведение к одному виду и проверка контрольной суммы.
+ * ИНН: нормализация и проверка контрольной суммы.
  *
- * Контрольная сумма — не придирка, а единственный способ поймать опечатку
- * до того, как она попадёт в договор и счёт. Там неверный ИНН стоит дорого:
- * счёт с чужим номером покупатель не проведёт, а исправлять придётся
- * перевыпуском документов.
+ * Контрольная сумма — часть самого номера, поэтому опечатку видно сразу,
+ * не спрашивая справочник. Это важно по двум причинам: справочник платный
+ * и его дёргать за каждую опечатку незачем, а человеку нужно сказать
+ * «проверьте номер», а не «компания не найдена» — это разные вещи и разные
+ * следующие шаги.
  *
- * Это проверка формата, а не существования компании. Номер может быть
- * правильно устроен и при этом не принадлежать никому — сверка с реальным
- * реестром идёт отдельно, через справочник (задача 02-2).
+ * Алгоритм — не наша выдумка: он задан порядком присвоения ИНН и одинаков
+ * у всех. Десять цифр у организаций, двенадцать у ИП и физлиц.
  *
- * Алгоритм — государственный, из приказа о порядке присвоения ИНН: цифры
- * умножаются на фиксированные веса, сумма по модулю 11 и потом 10 даёт
- * контрольную цифру. У организации номер из 10 цифр с одной контрольной,
- * у человека и ИП — из 12 с двумя.
+ * Вид номера можно потребовать заранее — `checkInn(inn, 'company')`. Это ловит
+ * случай, который иначе проходит незамеченным: юрлицо вводит личный ИНН
+ * директора, номер верный, но принадлежит человеку, а не компании. Документы
+ * выпустились бы не на то лицо.
  */
 
-export type InnResult = { ok: true; inn: string } | { ok: false; error: string }
+const WEIGHTS_10 = [2, 4, 10, 3, 5, 9, 4, 6, 8] as const
+const WEIGHTS_12_FIRST = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8] as const
+const WEIGHTS_12_SECOND = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8] as const
 
 /** Кому принадлежит номер: организации — 10 цифр, человеку и ИП — 12. */
 export type InnKind = 'company' | 'person'
 
-const WEIGHTS_10 = [2, 4, 10, 3, 5, 9, 4, 6, 8]
-const WEIGHTS_11 = [7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
-const WEIGHTS_12 = [3, 7, 2, 4, 10, 3, 5, 9, 4, 6, 8]
+export type InnCheck =
+  | { ok: true; inn: string; kind: InnKind }
+  | { ok: false; error: string }
 
-function controlDigit(digits: number[], weights: number[]): number {
-  let sum = 0
-  for (let i = 0; i < weights.length; i += 1) sum += weights[i]! * digits[i]!
-  return (sum % 11) % 10
+/** Убрать пробелы и дефисы: люди вставляют ИНН из документов как есть. */
+export function normalizeInn(input: string): string {
+  return input.replace(/[\s-]/gu, '')
 }
 
-/** Правильно ли устроен номер — без учёта того, кому он должен принадлежать. */
-export function isValidInn(inn: string): boolean {
-  if (!/^\d{10}$|^\d{12}$/u.test(inn)) return false
-  const digits = [...inn].map(Number)
+export function checkInn(input: string, expected?: InnKind): InnCheck {
+  const inn = normalizeInn(input)
 
-  if (digits.length === 10) return controlDigit(digits, WEIGHTS_10) === digits[9]
-  return (
-    controlDigit(digits, WEIGHTS_11) === digits[10] &&
-    controlDigit(digits, WEIGHTS_12) === digits[11]
-  )
-}
-
-/**
- * Привести введённое к виду для хранения и сказать понятным текстом,
- * что не так. Пробелы люди вставляют всегда — их убираем молча.
- */
-export function normalizeInn(input: string, kind?: InnKind): InnResult {
-  const digits = input.replace(/\s/gu, '').trim()
-
-  if (digits === '') return { ok: false, error: 'Укажите ИНН' }
-  if (!/^\d+$/u.test(digits)) return { ok: false, error: 'В ИНН только цифры, без пробелов и знаков' }
-
-  if (digits.length !== 10 && digits.length !== 12) {
+  if (!/^\d+$/u.test(inn)) {
+    return { ok: false, error: 'ИНН состоит только из цифр' }
+  }
+  if (inn.length !== 10 && inn.length !== 12) {
     return {
       ok: false,
-      error: 'В ИНН 10 цифр у организации и 12 у ИП или физлица. Проверьте, сколько ввели.',
+      error: 'В ИНН десять цифр у организации и двенадцать у ИП. Проверьте номер.',
     }
   }
 
-  if (kind === 'company' && digits.length !== 10) {
-    return { ok: false, error: 'У организации ИНН из 10 цифр. Похоже, это ИНН человека.' }
-  }
-  if (kind === 'person' && digits.length !== 12) {
-    return { ok: false, error: 'У ИП и физлица ИНН из 12 цифр. Похоже, это ИНН организации.' }
+  const digits = [...inn].map(Number)
+  const wrong = { ok: false as const, error: 'Похоже, в ИНН опечатка: номер не сходится' }
+
+  if (inn.length === 10) {
+    if (checkDigit(digits, WEIGHTS_10) !== digits[9]) return wrong
+    return expected && expected !== 'company'
+      ? { ok: false, error: 'У ИП и физлица ИНН из двенадцати цифр. Похоже, это номер организации.' }
+      : { ok: true, inn, kind: 'company' }
   }
 
-  if (!isValidInn(digits)) {
-    return { ok: false, error: 'ИНН не сходится по контрольной цифре — проверьте, нет ли опечатки' }
-  }
+  const eleventh = checkDigit(digits, WEIGHTS_12_FIRST)
+  const twelfth = checkDigit(digits, WEIGHTS_12_SECOND)
+  if (eleventh !== digits[10] || twelfth !== digits[11]) return wrong
+  return expected && expected !== 'person'
+    ? { ok: false, error: 'У организации ИНН из десяти цифр. Похоже, это личный номер человека.' }
+    : { ok: true, inn, kind: 'person' }
+}
 
-  return { ok: true, inn: digits }
+function checkDigit(digits: number[], weights: readonly number[]): number {
+  const sum = weights.reduce((total, weight, index) => total + weight * (digits[index] ?? 0), 0)
+  return (sum % 11) % 10
 }
