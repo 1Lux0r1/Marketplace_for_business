@@ -56,7 +56,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Чистый Свет',
-    inn: '7701000002',
+    inn: '7701000019',
     person: 'Марина Гущина',
     email: 'demo-cleaning@example.ru',
     phone: '+79160000002',
@@ -66,7 +66,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Инженерка',
-    inn: '7701000003',
+    inn: '7701000026',
     person: 'Павел Тарасов',
     email: 'demo-eng@example.ru',
     phone: '+79160000003',
@@ -76,7 +76,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Охрана труда',
-    inn: '7701000004',
+    inn: '7701000033',
     person: 'Елена Бирюкова',
     email: 'demo-safety@example.ru',
     phone: '+79160000004',
@@ -86,7 +86,7 @@ const CONTRACTORS = [
   },
   {
     name: 'Демо-Снабжение',
-    inn: '7701000005',
+    inn: '7701000040',
     person: 'Артём Логинов',
     email: 'demo-supply@example.ru',
     phone: '+79160000005',

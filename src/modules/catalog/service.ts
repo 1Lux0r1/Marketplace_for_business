@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import { getDb } from '@/shared/db'
 import { uuidv7 } from '@/shared/id'
 import * as platform from '@/modules/platform'
@@ -22,6 +22,16 @@ import type {
  * интерфейс (§4.2, §4.4). Это и есть та граница, ради которой потом можно
  * будет вынести модули в отдельные сервисы, а не переписывать.
  */
+
+/**
+ * «Сильные первыми».
+ *
+ * `nulls last` здесь обязателен: PostgreSQL при сортировке по убыванию ставит
+ * пустые значения ПЕРВЫМИ, и без этой оговорки подрядчик, которого ещё никто
+ * не оценивал, оказывался впереди пятизвёздочного — и в списке оператора,
+ * и в предложении заказчику.
+ */
+const byStrength = sql`${contractors.manualRating} desc nulls last`
 
 // ─── Категории ──────────────────────────────────────────────────────────
 
@@ -137,7 +147,7 @@ export async function listContractors(
     .select()
     .from(contractors)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(contractors.manualRating), asc(contractors.createdAt))
+    .orderBy(byStrength, asc(contractors.createdAt))
   return rows.map(toContractor)
 }
 
@@ -250,7 +260,7 @@ export async function findCandidates(input: {
         )`,
       ),
     )
-    .orderBy(desc(contractors.manualRating), asc(contractors.createdAt))
+    .orderBy(byStrength, asc(contractors.createdAt))
     .limit(input.limit ?? 10)
 
   return rows.map(toContractor)

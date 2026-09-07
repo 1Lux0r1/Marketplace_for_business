@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm'
 import { getDb, type Executor } from '@/shared/db'
 import { uuidv7 } from '@/shared/id'
+import { normalizeInn, type InnKind } from '@/shared/inn'
 import { normalizePhone } from '@/shared/phone'
 import { orgs, users } from './schema'
 import { errors } from './errors'
@@ -9,6 +10,23 @@ import type { LegalForm, Org, Role, User } from './types'
 /** Компании и люди. Вход, сессии и пароли — в `auth.ts`. */
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/u
+
+/**
+ * Пределы длины. Не придирка: без них в базу уходит всё, что поместилось
+ * в поле, а потом это же значение надо напечатать в договоре и в шапке
+ * экрана. Значения с запасом — самое длинное название организации в реестре
+ * не доходит до 400 знаков.
+ */
+export const MAX_ORG_NAME = 400
+export const MAX_FULL_NAME = 200
+export const MAX_POSITION = 120
+export const MAX_EMAIL = 254
+
+function assertLength(value: string, limit: number, what: string): void {
+  if (value.length > limit) {
+    throw errors.tooLong(`${what} длиннее ${limit} символов. Сократите — это не поместится в документы.`)
+  }
+}
 
 export function normalizeEmail(input: string): string {
   return input.trim().toLowerCase()
@@ -24,6 +42,21 @@ export function assertPhone(phone: string): void {
   if (!normalized.ok) throw errors.badPhone(normalized.error)
 }
 
+/** Какой вид ИНН положен этой форме собственности: у юрлица 10 цифр, у остальных 12. */
+export function innKindFor(legalForm: LegalForm): InnKind {
+  return legalForm === 'company' ? 'company' : 'person'
+}
+
+/**
+ * Проверка ИНН — до записи в базу. Здесь только форма номера и контрольная
+ * сумма; принадлежность реальной компании подтверждает справочник (задача 02-2).
+ */
+export function assertInn(inn: string, legalForm?: LegalForm): string {
+  const result = normalizeInn(inn, legalForm ? innKindFor(legalForm) : undefined)
+  if (!result.ok) throw errors.badInn(result.error)
+  return result.inn
+}
+
 export async function createOrg(
   input: {
     legalForm: LegalForm
@@ -36,14 +69,21 @@ export async function createOrg(
   const db = exec ?? getDb()
   const id = uuidv7()
 
+  const name = input.name.trim()
+  assertLength(name, MAX_ORG_NAME, 'Название')
+
+  // Номер проверяем, только если он задан: организация площадки и записи,
+  // заведённые оператором до сверки с реестром, живут без него
+  const inn = input.inn?.trim() ? assertInn(input.inn, input.legalForm) : null
+
   try {
     const [row] = await db
       .insert(orgs)
       .values({
         id,
         legalForm: input.legalForm,
-        name: input.name.trim(),
-        inn: input.inn?.trim() || null,
+        name,
+        inn,
         isPlatform: input.isPlatform ?? false,
         // Регистрация даёт роль заказчика. Роль подрядчика включается
         // отдельным действием — там проверка ИНН и договор с площадкой
@@ -106,10 +146,16 @@ export async function createUser(
 ): Promise<User> {
   const db = exec ?? getDb()
   const email = normalizeEmail(input.email)
+  assertLength(email, MAX_EMAIL, 'Адрес почты')
   assertEmail(email)
 
   const phone = normalizePhone(input.phone)
   if (!phone.ok) throw errors.badPhone(phone.error)
+
+  const fullName = input.fullName.trim()
+  assertLength(fullName, MAX_FULL_NAME, 'Фамилия и имя')
+  const position = input.position?.trim() || null
+  if (position) assertLength(position, MAX_POSITION, 'Должность')
 
   // Организация должна существовать: между модулями внешних ключей нет,
   // а внутри своей схемы они есть — но проверить понятной ошибкой лучше здесь
@@ -123,9 +169,9 @@ export async function createUser(
         orgId: input.orgId,
         email,
         phone: phone.phone,
-        fullName: input.fullName.trim(),
+        fullName,
         role: input.role,
-        position: input.position?.trim() || null,
+        position,
       })
       .returning()
     return toUser(row!)

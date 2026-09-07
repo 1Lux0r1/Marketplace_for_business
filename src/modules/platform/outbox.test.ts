@@ -60,7 +60,7 @@ describe('публикация', () => {
     const { orgId, emailCode } = await platform.register({
       legalForm: 'company',
       companyName: 'Кофейня «Пример»',
-      inn: '7701234567',
+      inn: '7701234560',
       fullName: 'Анна Ковалёва',
       email: 'anna@example.ru',
       phone: '+79161234567',

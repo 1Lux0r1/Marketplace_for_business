@@ -2,11 +2,12 @@
 
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
+import type { z } from 'zod'
 import * as platform from '@/modules/platform'
 import * as notifications from '@/modules/notifications'
 import { logger } from '@/shared/logger'
 import { startSession, endSession } from '@/server/session'
+import { loginSchema, registerSchema, resendSchema, verifySchema } from './auth-schemas'
 
 /**
  * Команды форм входа и регистрации.
@@ -22,38 +23,18 @@ export type FormResult =
   | { ok: true; message?: string | undefined }
   | { ok: false; error: string; field?: string | undefined }
 
-const registerSchema = z.object({
-  legalForm: z.enum(['individual', 'sole_trader', 'company']),
-  companyName: z.string().trim().min(2, 'Укажите название — по нему вас найдут заказчики'),
-  inn: z.string().trim().optional(),
-  fullName: z.string().trim().min(3, 'Укажите фамилию и имя'),
-  position: z.string().trim().optional(),
-  email: z.email('Проверьте адрес почты: похоже, в нём опечатка'),
-  phone: z.string().trim().min(1, 'Телефон нужен: по нему с вами свяжется подрядчик'),
-  password: z.string(),
-})
-
-const loginSchema = z.object({
-  login: z.string().trim().min(1, 'Введите почту или телефон'),
-  password: z.string().min(1, 'Введите пароль'),
-  remember: z.boolean(),
-})
-
-const verifySchema = z.object({
-  email: z.email(),
-  code: z.string().trim().min(1, 'Введите код из письма'),
-})
-
 export async function registerAction(input: unknown): Promise<FormResult> {
   const parsed = registerSchema.safeParse(input)
   if (!parsed.success) return firstIssue(parsed.error)
 
   const data = parsed.data
   // Юрлицу и ИП название даёт справочник по ИНН, физлицу — собственное имя
-  const companyName = data.legalForm === 'individual' ? data.fullName : data.companyName
+  const companyName =
+    data.legalForm === 'individual' ? data.fullName : (data.companyName ?? '')
+  const { ip } = await visitor()
 
   try {
-    const { emailCode } = await platform.register({ ...data, companyName })
+    const { emailCode } = await platform.register({ ...data, companyName, ip })
     await notifications.sendEmail({
       to: data.email,
       template: 'verify_email',
@@ -66,14 +47,48 @@ export async function registerAction(input: unknown): Promise<FormResult> {
   }
 }
 
+/**
+ * Выслать код ещё раз.
+ *
+ * Без этого регистрация — дорога в один конец: письмо не дошло или код протух,
+ * а войти нельзя, потому что почта не подтверждена, и зарегистрироваться
+ * заново нельзя, потому что адрес занят.
+ *
+ * Ответ один и тот же независимо от того, есть такой адрес или нет: иначе
+ * форма превращается в способ узнать, кто зарегистрирован на площадке.
+ */
+export async function resendCodeAction(input: unknown): Promise<FormResult> {
+  const parsed = resendSchema.safeParse(input)
+  if (!parsed.success) return firstIssue(parsed.error)
+
+  const { ip } = await visitor()
+  try {
+    const { code, fullName } = await platform.resendEmailCode({ email: parsed.data.email, ip })
+    if (code) {
+      await notifications.sendEmail({
+        to: parsed.data.email,
+        template: 'verify_email',
+        fullName: fullName ?? undefined,
+        code,
+      })
+    }
+    return { ok: true, message: 'Если учётная запись ждёт подтверждения, код уже в пути' }
+  } catch (error: unknown) {
+    return asFormResult(error, 'повторная отправка кода не прошла')
+  }
+}
+
 export async function verifyEmailAction(input: unknown): Promise<FormResult> {
   const parsed = verifySchema.safeParse(input)
   if (!parsed.success) return firstIssue(parsed.error)
 
   try {
-    await platform.verifyEmail(parsed.data)
+    // Код доказал, что почта его, а пароль он задал сам в форме регистрации —
+    // впускаем сразу, вместо того чтобы просить тот же пароль ещё раз
+    const { token } = await platform.verifyEmail({ ...parsed.data, ...(await visitor()) })
+    await startSession(token, false)
     revalidatePath('/')
-    return { ok: true, message: 'Учётная запись включена. Теперь можно войти.' }
+    return { ok: true, message: 'Учётная запись включена — вы вошли' }
   } catch (error: unknown) {
     return asFormResult(error, 'подтверждение почты не прошло')
   }

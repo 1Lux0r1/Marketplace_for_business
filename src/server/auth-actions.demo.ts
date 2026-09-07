@@ -26,6 +26,10 @@ export function verifyEmailAction(): Promise<FormResult> {
   return Promise.resolve(noServer)
 }
 
+export function resendCodeAction(): Promise<FormResult> {
+  return Promise.resolve(noServer)
+}
+
 export function loginAction(): Promise<FormResult> {
   return Promise.resolve(noServer)
 }

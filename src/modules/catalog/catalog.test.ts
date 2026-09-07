@@ -26,6 +26,20 @@ async function makeOrg(name: string, inn: string) {
   return platform.createOrg({ legalForm: 'company', name, inn })
 }
 
+/**
+ * Выдуманные, но правильно устроенные ИНН: контрольная цифра сходится.
+ * Набирать их в цикле нельзя — `platform` проверяет контрольную сумму,
+ * и «7701000000» до базы не доедет.
+ */
+const DEMO_INNS = [
+  '7701000019',
+  '7701000026',
+  '7701000033',
+  '7701000040',
+  '7701000058',
+  '7701000065',
+] as const
+
 async function makeCategory(code: string, name: string) {
   const db = getDb()
   const [row] = await db.execute<{ id: string }>(sql`
@@ -40,13 +54,14 @@ async function makeContractor(options: {
   categoryIds: string[]
   zones: string[]
   status?: 'draft' | 'active' | 'paused' | 'blocked'
-  rating?: number
+  /** `null` — подрядчик, которого ещё никто не оценивал. */
+  rating?: number | null
 }) {
   const org = await makeOrg(options.name, options.inn)
   const contractor = await catalog.createContractor({
     orgId: org.id,
     status: options.status ?? 'active',
-    manualRating: options.rating ?? 3,
+    manualRating: options.rating === undefined ? 3 : (options.rating ?? undefined),
   })
   await catalog.setContractorCategories(contractor.id, options.categoryIds)
   await catalog.setContractorZones(contractor.id, options.zones)
@@ -63,7 +78,7 @@ describe('граница модулей', () => {
   })
 
   it('одна компания — один подрядчик', async () => {
-    const org = await makeOrg('Кофейня «Пример»', '7701234567')
+    const org = await makeOrg('Кофейня «Пример»', '7701234560')
     await catalog.createContractor({ orgId: org.id })
     await expect(catalog.createContractor({ orgId: org.id })).rejects.toMatchObject({
       code: 'org_already_contractor',
@@ -101,7 +116,7 @@ describe('зоны', () => {
   })
 
   it('зону не из справочника подрядчику не поставить', async () => {
-    const org = await makeOrg('Кофейня', '7701234567')
+    const org = await makeOrg('Кофейня', '7701234560')
     const contractor = await catalog.createContractor({ orgId: org.id })
 
     // Иначе в базе окажутся «msk-cao», «МСК-ЦАО» и «центр»,
@@ -121,7 +136,7 @@ describe('отбор кандидатов', () => {
       name: 'Демо-Чистый', inn: '7701000001', categoryIds: [cleaning], zones: ['msk-cao'],
     })
     await makeContractor({
-      name: 'Демо-Инженерка', inn: '7701000002', categoryIds: [hvac], zones: ['msk-cao'],
+      name: 'Демо-Инженерка', inn: '7701000019', categoryIds: [hvac], zones: ['msk-cao'],
     })
 
     const found = await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk-cao' })
@@ -154,7 +169,7 @@ describe('отбор кандидатов', () => {
       zones: ['msk'], status: 'paused',
     })
     await makeContractor({
-      name: 'Демо-Блок', inn: '7701000002', categoryIds: [cleaning],
+      name: 'Демо-Блок', inn: '7701000019', categoryIds: [cleaning],
       zones: ['msk'], status: 'blocked',
     })
 
@@ -168,18 +183,39 @@ describe('отбор кандидатов', () => {
       name: 'Демо-Троечник', inn: '7701000001', categoryIds: [cleaning], zones: ['msk'], rating: 3,
     })
     const best = await makeContractor({
-      name: 'Демо-Отличник', inn: '7701000002', categoryIds: [cleaning], zones: ['msk'], rating: 5,
+      name: 'Демо-Отличник', inn: '7701000019', categoryIds: [cleaning], zones: ['msk'], rating: 5,
     })
 
     const found = await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk' })
     expect(found[0]?.id).toBe(best.id)
   })
 
+  it('неоценённый подрядчик не встаёт впереди сильного', async () => {
+    // PostgreSQL при сортировке по убыванию ставит пустые значения первыми.
+    // Из-за этого тот, кого ещё никто не оценивал, оказывался впереди
+    // пятизвёздочного — и заказчик видел его первым предложением
+    const cleaning = await makeCategory('cleaning', 'Клининг')
+    const best = await makeContractor({
+      name: 'Демо-Отличник', inn: '7701000019', categoryIds: [cleaning], zones: ['msk'], rating: 5,
+    })
+    const unrated = await makeContractor({
+      name: 'Демо-Новичок', inn: '7701000026', categoryIds: [cleaning], zones: ['msk'],
+      rating: null,
+    })
+
+    const found = await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk' })
+    expect(found.map((c) => c.id)).toEqual([best.id, unrated.id])
+
+    // То же и в списке оператора: два экрана не должны сортировать по-разному
+    const listed = await catalog.listContractors({})
+    expect(listed.map((c) => c.id)).toEqual([best.id, unrated.id])
+  })
+
   it('не отдаёт больше, чем просили', async () => {
     const cleaning = await makeCategory('cleaning', 'Клининг')
     for (let i = 0; i < 4; i += 1) {
       await makeContractor({
-        name: `Демо-${i}`, inn: `770100000${i}`, categoryIds: [cleaning], zones: ['msk'],
+        name: `Демо-${i}`, inn: DEMO_INNS[i]!, categoryIds: [cleaning], zones: ['msk'],
       })
     }
     expect(await catalog.findCandidates({ categoryId: cleaning, zoneCode: 'msk', limit: 2 }))

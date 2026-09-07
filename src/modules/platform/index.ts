@@ -20,6 +20,17 @@ export type { Org, User, Role, LegalForm }
 export { PlatformError } from './errors'
 export type { PlatformErrorCode } from './errors'
 
+/**
+ * Пределы длины полей. Форма проверяет их у себя, чтобы сказать человеку
+ * заранее, — но решает всё равно модуль: проверка в форме удобство, а не защита (§6).
+ */
+export const LIMITS = {
+  orgName: service.MAX_ORG_NAME,
+  fullName: service.MAX_FULL_NAME,
+  position: service.MAX_POSITION,
+  email: service.MAX_EMAIL,
+} as const
+
 // ─── Компании ───────────────────────────────────────────────────────────
 
 export const getOrg = service.getOrg
@@ -66,6 +77,8 @@ export type RegisterInput = {
   email: string
   phone: string
   password: string
+  /** Откуда пришли — для ограничения частоты. Без него считаем только по адресу. */
+  ip?: string | undefined
 }
 
 /**
@@ -86,7 +99,20 @@ export async function register(
   service.assertPhone(input.phone)
   auth.assertPasswordStrength(input.password)
 
-  return getDb().transaction(async (tx) => {
+  // ИНН обязателен всем, кроме физлица: у ИП и юрлица он есть всегда,
+  // а без него нельзя ни выпустить договор, ни свериться со справочником
+  if (input.legalForm === 'individual') {
+    if (input.inn?.trim()) service.assertInn(input.inn, input.legalForm)
+  } else {
+    if (!input.inn?.trim()) throw errors.innRequired()
+    service.assertInn(input.inn, input.legalForm)
+  }
+
+  // Письмо с кодом уходит на адрес, который выбрал нажавший кнопку. Без счётчика
+  // форма регистрации — способ рассылать письма с нашего домена куда угодно
+  await auth.assertCanSendCode(input.email, input.ip)
+
+  const result = await getDb().transaction(async (tx) => {
     // Понятный ответ раньше, чем сработает ограничение базы: иначе человек,
     // регистрирующий свою компанию второй раз, узнает про ИНН, а не про почту
     if (await service.findUserByEmail(input.email, tx)) throw errors.emailTaken()
@@ -132,14 +158,70 @@ export async function register(
 
     return { userId: user.id, orgId: org.id, emailCode }
   })
+
+  // Считаем только состоявшуюся регистрацию: отказ письма не отправляет,
+  // а значит и бюджет писем тратить не должен
+  await auth.recordAttempt({ email: input.email, ip: input.ip, method: 'code', succeeded: true })
+  return result
 }
 
-/** Подтверждение почты кодом из письма. После него учётная запись активна. */
-export async function verifyEmail(input: { email: string; code: string }): Promise<void> {
+/**
+ * Выслать код подтверждения ещё раз.
+ *
+ * Без этого регистрация — дорога в один конец: письмо не дошло или код
+ * протух за 15 минут, войти нельзя (почта не подтверждена), зарегистрироваться
+ * заново нельзя (адрес занят). Учётная запись остаётся мёртвой навсегда.
+ *
+ * Ответ одинаковый для существующего и несуществующего адреса — по той же
+ * причине, что и в `startLogin`: иначе форма отвечает на вопрос
+ * «кто у вас зарегистрирован». Код возвращается только когда он и правда нужен.
+ */
+export async function resendEmailCode(input: {
+  email: string
+  ip?: string | undefined
+}): Promise<{ code: string | null; fullName: string | null }> {
+  service.assertEmail(input.email)
+  await auth.assertCanSendCode(input.email, input.ip)
+  await auth.recordAttempt({ email: input.email, ip: input.ip, method: 'code', succeeded: true })
+
+  const user = await service.findUserByEmail(input.email)
+  // Подтверждённой почте новый код не нужен, неактивной учётной записи — не положен
+  if (!user || !user.isActive || user.emailVerified) return { code: null, fullName: null }
+
+  return { code: await auth.issueCode(user.email, 'verify_email'), fullName: user.fullName }
+}
+
+/**
+ * Подтверждение почты кодом из письма. После него учётная запись активна.
+ *
+ * И сразу впускает: человек только что доказал, что почта его, а пароль
+ * задал сам в форме регистрации. Заставлять его тут же вводить этот пароль
+ * заново — лишний шаг, на котором часть людей уходит.
+ */
+export async function verifyEmail(input: {
+  email: string
+  code: string
+  remember?: boolean | undefined
+  ip?: string | undefined
+  userAgent?: string | undefined
+}): Promise<LoginResult> {
   await auth.consumeCode(input.email, input.code, 'verify_email')
   const user = await service.findUserByEmail(input.email)
   if (!user) throw errors.userNotFound()
+  if (!user.isActive) throw errors.wrongCredentials()
   await service.markEmailVerified(user.id)
+
+  const session = await auth.createSession({
+    userId: user.id,
+    remember: input.remember ?? false,
+    ip: input.ip,
+    userAgent: input.userAgent,
+  })
+  return {
+    token: session.token,
+    expiresAt: session.expiresAt,
+    user: { ...user, emailVerified: true },
+  }
 }
 
 /** Приглашение сотрудника: заводит человека и выдаёт ссылку на установку пароля. */
