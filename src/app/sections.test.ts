@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Org, User } from '@/modules/platform'
-import { sectionsFor, type Section } from './sections'
+import { existsSync } from 'node:fs'
+import { sectionsFor, plannedFor, type Section } from './sections'
 
 /**
  * §7.1 — главное правило информационной архитектуры проекта: разделы называются
@@ -41,8 +42,8 @@ const user = (over: Partial<User> = {}): User => ({
 const labels = (sections: Section[]) => sections.map((s) => s.label)
 
 describe('меню собирается из ролей (§7.1)', () => {
-  it('заказчик видит свои четыре раздела', () => {
-    expect(labels(sectionsFor(org(), user()))).toEqual([
+  it('заказчику запланированы свои четыре раздела', () => {
+    expect(labels(plannedFor(org(), user()))).toEqual([
       'Найти услугу',
       'Мои заказы',
       'Документы и счета',
@@ -51,7 +52,7 @@ describe('меню собирается из ролей (§7.1)', () => {
   })
 
   it('подрядчик, который не заказывает, видит только свои разделы', () => {
-    const sections = sectionsFor(org({ isClient: false, isContractor: true }), user())
+    const sections = plannedFor(org({ isClient: false, isContractor: true }), user())
     expect(labels(sections)).toEqual([
       'Мои услуги',
       'Новые предложения',
@@ -62,7 +63,7 @@ describe('меню собирается из ролей (§7.1)', () => {
   })
 
   it('компания, которая и заказывает и выполняет, видит оба набора подряд', () => {
-    const sections = sectionsFor(org({ isContractor: true }), user())
+    const sections = plannedFor(org({ isContractor: true }), user())
     expect(labels(sections)).toEqual([
       'Найти услугу',
       'Мои заказы',
@@ -83,7 +84,7 @@ describe('меню собирается из ролей (§7.1)', () => {
 
   it('сотрудник площадки видит разделы оператора, а не разделы компании', () => {
     const staff = org({ isPlatform: true, isClient: false, name: 'Площадка' })
-    expect(labels(sectionsFor(staff, user({ role: 'operator' })))).toEqual([
+    expect(labels(plannedFor(staff, user({ role: 'operator' })))).toEqual([
       'Очередь',
       'Сделки',
       'Подрядчики',
@@ -93,11 +94,11 @@ describe('меню собирается из ролей (§7.1)', () => {
   })
 
   it('незашедший видит витрину: каталог — основной путь (§1)', () => {
-    expect(labels(sectionsFor(null, null))).toContain('Найти услугу')
+    expect(labels(plannedFor(null, null))).toContain('Найти услугу')
   })
 
   it('у каждого раздела свой адрес: два пункта на один экран — ошибка', () => {
-    const all = sectionsFor(org({ isContractor: true }), user())
+    const all = plannedFor(org({ isContractor: true }), user())
     const hrefs = all.map((s) => s.href)
     expect(new Set(hrefs).size).toBe(hrefs.length)
   })
@@ -126,13 +127,44 @@ const forbidden: Array<[string, Org, string[]]> = [
 
 describe('системные термины не протекают в меню (§7.1)', () => {
   it.each(forbidden)('%s таких слов не показываем', (_who, company, words) => {
-    const menu = labels(sectionsFor(company, user())).join(' · ').toLowerCase()
+    const menu = labels(plannedFor(company, user())).join(' · ').toLowerCase()
     const leaked = words.filter((word) => menu.includes(word))
     expect(leaked, `в меню протекло: ${leaked.join(', ')} — «${menu}»`).toEqual([])
   })
 
   it('в меню нет английских слов: интерфейс на русском (§6)', () => {
-    const menu = labels(sectionsFor(org({ isContractor: true }), user())).join(' ')
+    const menu = labels(plannedFor(org({ isContractor: true }), user())).join(' ')
     expect(menu).not.toMatch(/[A-Za-z]/)
+  })
+})
+
+/**
+ * Пункт меню, ведущий на несуществующий экран, — сломанный интерфейс: человек
+ * нажимает и попадает на страницу ошибки. Раздел показывается только когда
+ * его экран готов, и это держится здесь, а не на памяти.
+ *
+ * Проверка смотрит на файлы страниц, а не на список в коде: список можно
+ * поправить и забыть, файл — нет.
+ */
+describe('меню не ведёт в никуда', () => {
+  const everyone = [
+    sectionsFor(org({ isContractor: true }), user()),
+    sectionsFor(org({ isPlatform: true, isClient: false }), user({ role: 'operator' })),
+    sectionsFor(null, null),
+  ].flat()
+
+  it('показываем хоть что-то: пустое меню — тоже поломка', () => {
+    expect(everyone.length).toBeGreaterThan(0)
+  })
+
+  it.each([...new Set(everyone.map((s) => s.href))])('за %s есть экран', (href) => {
+    const page = new URL(`.${href}/page.tsx`, import.meta.url)
+    expect(existsSync(page), `нет файла экрана для ${href}`).toBe(true)
+  })
+
+  it('неготовые разделы описаны, но не показаны', () => {
+    const planned = plannedFor(org({ isContractor: true }), user())
+    const shown = sectionsFor(org({ isContractor: true }), user())
+    expect(planned.length).toBeGreaterThan(shown.length)
   })
 })

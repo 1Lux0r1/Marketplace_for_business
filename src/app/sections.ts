@@ -20,6 +20,17 @@ export type Group = 'client' | 'contractor' | 'staff'
 export type Section = {
   href: string
   label: string
+  /**
+   * Экран за разделом уже существует.
+   *
+   * Пункт меню, ведущий в никуда, — это не «задел на будущее», а сломанный
+   * интерфейс: человек нажимает и попадает на страницу ошибки. Поэтому
+   * неготовые разделы в меню не показываются, хотя и описаны здесь — так
+   * видно, куда система растёт, и пункт включается вместе со своей задачей.
+   *
+   * Проверяется тестом: у каждого показанного раздела есть свой экран.
+   */
+  ready?: boolean
   /** Имя иконки из реестра `src/ui/icons.tsx`, а не сам рисунок: этот файл —
       знание о предметной области, и он не должен зависеть от разметки. */
   icon: IconName
@@ -30,7 +41,7 @@ export type Section = {
 
 /** Заказчик: выбирает услугу, следит за заказом, платит, принимает работу. */
 const client: Section[] = [
-  { href: '/', label: 'Найти услугу', icon: 'search', group: 'client' },
+  { href: '/catalog', label: 'Найти услугу', icon: 'search', group: 'client', ready: true },
   { href: '/orders', label: 'Мои заказы', icon: 'bag', group: 'client' },
   { href: '/documents', label: 'Документы и счета', icon: 'doc', group: 'client' },
   { href: '/company', label: 'Компания', icon: 'building', group: 'client' },
@@ -49,7 +60,7 @@ const contractor: Section[] = [
 const operator: Section[] = [
   { href: '/queue', label: 'Очередь', icon: 'inbox', group: 'staff' },
   { href: '/deals', label: 'Сделки', icon: 'deal', group: 'staff' },
-  { href: '/contractors', label: 'Подрядчики', icon: 'users', group: 'staff' },
+  { href: '/operator/contractors', label: 'Подрядчики', icon: 'users', group: 'staff', ready: true },
   { href: '/disputes', label: 'Споры', icon: 'alert', group: 'staff' },
   { href: '/metrics', label: 'Метрики', icon: 'chart', group: 'staff' },
 ]
@@ -67,6 +78,15 @@ const operator: Section[] = [
  * Заменяется, когда админка будет спроектирована.
  */
 export function sectionsFor(org: Org | null, user: User | null): Section[] {
+  return plannedFor(org, user).filter((section) => section.ready)
+}
+
+/**
+ * Все разделы роли, включая те, чьих экранов ещё нет. Нужен плану и тестам:
+ * по нему видно, куда система растёт, и он же следит, чтобы название раздела
+ * не съехало в системный термин раньше, чем экран появится.
+ */
+export function plannedFor(org: Org | null, user: User | null): Section[] {
   if (!org || !user) return client
 
   if (org.isPlatform) return operator

@@ -65,6 +65,13 @@ export async function getOrg(id: string, exec?: Executor): Promise<Org> {
   return toOrg(row)
 }
 
+/** Найти компанию по ИНН: оператор ищет её именно так, а не по номеру. */
+export async function findOrgByInn(inn: string): Promise<Org | null> {
+  const db = getDb()
+  const [row] = await db.select().from(orgs).where(eq(orgs.inn, inn.trim())).limit(1)
+  return row ? toOrg(row) : null
+}
+
 export async function getPlatformOrg(): Promise<Org | null> {
   const db = getDb()
   const [row] = await db.select().from(orgs).where(eq(orgs.isPlatform, true)).limit(1)

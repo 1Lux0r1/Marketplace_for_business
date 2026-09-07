@@ -42,7 +42,9 @@ export function Nav({ sections }: { sections: Section[] }) {
       {sections.map((section, i) => {
         const { href, label, count = 0, group } = section
         const Icon = icons[section.icon]
-        const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
+        // Совпадение точное или по вложенному адресу. Просто `startsWith` метил бы
+        // «Мои услуги» активным на «/services-archive» — правка второго агента
+        const isActive = pathname === href || pathname.startsWith(`${href}/`)
         const startsGroup = i > 0 && sections[i - 1]!.group !== group
 
         return (
