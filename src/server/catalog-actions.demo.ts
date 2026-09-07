@@ -18,3 +18,11 @@ export function createContractorAction(): Promise<FormResult> {
 export function updateContractorAction(): Promise<FormResult> {
   return Promise.resolve(noServer)
 }
+
+export function joinAsContractorAction(): Promise<FormResult> {
+  return Promise.resolve(noServer)
+}
+
+export function decideVerificationAction(): Promise<FormResult> {
+  return Promise.resolve(noServer)
+}

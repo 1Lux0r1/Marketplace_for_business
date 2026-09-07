@@ -1,7 +1,8 @@
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm'
-import { getDb } from '@/shared/db'
+import { getDb, type Executor } from '@/shared/db'
 import { uuidv7 } from '@/shared/id'
 import * as platform from '@/modules/platform'
+import { checkInn } from '@/shared/inn'
 import {
   categories,
   contractorCategories,
@@ -67,19 +68,22 @@ export async function getCategoryByCode(code: string): Promise<Category> {
  * между схемами их нет (§4.3). Ошибка при этом человеческая, а не «нарушение
  * ограничения внешнего ключа».
  */
-export async function createContractor(input: {
-  orgId: string
-  status?: ContractorStatus
-  manualRating?: number | undefined
-  notes?: string | undefined
-}): Promise<Contractor> {
+export async function createContractor(
+  input: {
+    orgId: string
+    status?: ContractorStatus
+    manualRating?: number | undefined
+    notes?: string | undefined
+  },
+  exec?: Executor,
+): Promise<Contractor> {
   try {
     await platform.getOrg(input.orgId)
   } catch {
     throw errors.orgNotFound()
   }
 
-  const db = getDb()
+  const db = exec ?? getDb()
   try {
     const [row] = await db
       .insert(contractors)
@@ -535,4 +539,146 @@ async function withZones(rows: StorefrontRow[]): Promise<StorefrontListing[]> {
     contractorRating: row.contractorRating,
     zones: ownByListing.get(row.listing.id) ?? byContractorMap.get(row.listing.contractorId) ?? [],
   }))
+}
+
+// ─── Саморегистрация подрядчика ─────────────────────────────────────────
+
+/**
+ * Подрядчик заводит себя сам (решение Q10): каталог наполняется
+ * саморегистрацией, а не руками оператора.
+ *
+ * Отклонение от текста задачи 02-2, названное вслух: там форма описана как
+ * «ИНН, название, контактное лицо, почта». Телефон и пароль добавлены, потому
+ * что задача писалась до 01-2, а с неё у каждого человека в системе есть
+ * учётная запись — заводить подрядчика без неё значит городить второй вид
+ * входа рядом с первым.
+ *
+ * Подрядчик попадает в статус `draft` и заявок не получает, пока ИНН
+ * не проверен. Сама проверка идёт отдельным процессом через очередь событий:
+ * **ни один внешний вызов не может остановить регистрацию**. Справочник
+ * платный, чужой и иногда лежит — человек не должен из-за этого стоять
+ * у крутящейся кнопки и тем более получать отказ.
+ */
+export async function registerContractor(input: {
+  inn: string
+  legalForm: 'individual' | 'sole_trader' | 'company'
+  companyName: string
+  fullName: string
+  position?: string | undefined
+  email: string
+  phone: string
+  password: string
+}): Promise<{ contractorId: string; orgId: string; userId: string; emailCode: string | null }> {
+  // Контрольная сумма — до всего остального: опечатку видно без справочника,
+  // и человеку надо сказать «проверьте номер», а не «компания не найдена»
+  const checked = checkInn(input.inn)
+  if (!checked.ok) throw errors.badInn(checked.error)
+
+  const existingOrg = await platform.findOrgByInn(checked.inn)
+  if (existingOrg) {
+    const already = await findContractorByOrg(existingOrg.id)
+    if (already) throw errors.orgAlreadyContractor()
+  }
+
+  let orgId: string
+  let userId: string
+  let emailCode: string | null = null
+
+  if (existingOrg) {
+    // Компания уже в системе — например, она заказывала и теперь хочет
+    // выполнять. Одна и та же компания вправе делать и то, и другое (§1)
+    orgId = existingOrg.id
+    const owner = await platform.findUserByEmail(input.email)
+    if (!owner || owner.orgId !== orgId) throw errors.orgBelongsToSomeoneElse()
+    userId = owner.id
+  } else {
+    const registered = await platform.register({
+      legalForm: input.legalForm,
+      companyName: input.companyName,
+      inn: checked.inn,
+      fullName: input.fullName,
+      position: input.position,
+      email: input.email,
+      phone: input.phone,
+      password: input.password,
+    })
+    orgId = registered.orgId
+    userId = registered.userId
+    emailCode = registered.emailCode
+  }
+
+  await platform.enableContractorRole(orgId)
+
+  const db = getDb()
+  const contractor = await db.transaction(async (tx) => {
+    const created = await createContractor({ orgId, status: 'draft' }, tx)
+    // Событие ложится в ту же транзакцию, что и запись (§5): подрядчик
+    // не может появиться без события о нём, а событие — без подрядчика
+    await platform.publish(tx, {
+      type: 'contractor.registered',
+      aggregate: 'contractor',
+      aggregateId: created.id,
+      payload: { contractorId: created.id, orgId, inn: checked.inn, kind: checked.kind },
+    })
+    return created
+  })
+
+  return { contractorId: contractor.id, orgId, userId, emailCode }
+}
+
+/**
+ * Итог проверки ИНН: подрядчик становится активным или уходит к оператору.
+ *
+ * Вызывается из воркера после ответа справочника. Идемпотентна — событие
+ * может прийти дважды (§5), и второй вызов не должен ничего менять повторно.
+ */
+export async function applyInnVerdict(input: {
+  contractorId: string
+  verified: boolean
+  details: Record<string, unknown>
+}): Promise<void> {
+  const contractor = await getContractorRow(input.contractorId)
+
+  const { wasFirst } = await platform.recordInnVerification({
+    orgId: contractor.orgId,
+    verified: input.verified,
+    details: input.details,
+  })
+
+  const db = getDb()
+  await db.transaction(async (tx) => {
+    // Активируем только из черновика: оператор мог уже поставить паузу
+    // или заблокировать — его решение сильнее машинного
+    if (input.verified && contractor.status === 'draft') {
+      await tx
+        .update(contractors)
+        .set({ status: 'active' })
+        .where(eq(contractors.id, input.contractorId))
+    }
+
+    // Событие только на первый итог: повторная доставка не должна слать
+    // подрядчику второе письмо про то же самое
+    if (!wasFirst) return
+    await platform.publish(tx, {
+      type: input.verified ? 'contractor.verified' : 'contractor.rejected',
+      aggregate: 'contractor',
+      aggregateId: input.contractorId,
+      payload: {
+        contractorId: input.contractorId,
+        orgId: contractor.orgId,
+        verified: input.verified,
+      },
+    })
+  })
+}
+
+/** Кто ждёт ручной проверки: очередь оператора. */
+export async function pendingVerification(): Promise<Contractor[]> {
+  const db = getDb()
+  const rows = await db
+    .select()
+    .from(contractors)
+    .where(eq(contractors.status, 'draft'))
+    .orderBy(asc(contractors.createdAt))
+  return rows.map(toContractor)
 }

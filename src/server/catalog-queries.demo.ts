@@ -5,9 +5,14 @@
  * в пустом состоянии. Подменяется на сборке (см. `next.config.ts`).
  */
 import type * as catalog from '@/modules/catalog'
-import type { ContractorDetails, ContractorRow, OperatorAccess } from './catalog-queries'
+import type {
+  ContractorDetails,
+  ContractorRow,
+  OperatorAccess,
+  VerificationRow,
+} from './catalog-queries'
 
-export type { ContractorRow, ContractorDetails, OperatorAccess }
+export type { ContractorRow, ContractorDetails, OperatorAccess, VerificationRow }
 
 export function requireOperator(): Promise<OperatorAccess> {
   return Promise.resolve({ allowed: false, reason: 'anonymous' })
@@ -28,3 +33,9 @@ export function categoryOptions(): Promise<catalog.Category[]> {
 export function zoneOptions(): catalog.Zone[] {
   return []
 }
+
+export function verificationQueue(): Promise<VerificationRow[]> {
+  return Promise.resolve([])
+}
+
+export const MANUAL_VERDICT = 'manual'
