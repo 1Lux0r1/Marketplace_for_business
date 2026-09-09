@@ -1,6 +1,7 @@
 import 'server-only'
 import * as catalog from '@/modules/catalog'
 import * as platform from '@/modules/platform'
+import { zoneNames } from './zone-names'
 
 /**
  * Чтение для витрины: то, что видит клиент.
@@ -32,6 +33,12 @@ export type StorefrontCard = catalog.StorefrontListing & {
    * Незнакомый код витрина переживает — рисует нейтральную картинку.
    */
   categoryCode: string
+  /**
+   * Округа выезда названиями, а не кодами: `msk-cao` — системный термин,
+   * и §7.1 запрещает ему появляться на экране. Поле отдельное, а не поверх
+   * `zones`, чтобы код оставался тем, по чему фильтруют.
+   */
+  zoneNames: string[]
 }
 
 export type StorefrontPage = {
@@ -101,6 +108,7 @@ async function withContractorNames(
       // что подрядчик не аноним
       innVerified: org?.innVerifiedAt !== null && org?.innVerifiedAt !== undefined,
       categoryCode: codeById.get(listing.categoryId) ?? '',
+      zoneNames: zoneNames(listing.zones),
     }
   })
 }

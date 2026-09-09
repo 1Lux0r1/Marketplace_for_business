@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { Nav } from './nav'
 import { AuthButtons } from './auth/auth-buttons'
 import { UserMenu } from './auth/user-menu'
@@ -34,16 +35,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body className="flex min-h-screen flex-col bg-bg text-ink">
         <header className="flex-none border-b border-line bg-surface">
           <div className="flex h-[68px] items-center gap-4 px-4 md:gap-7 md:px-10">
-            <div className="flex flex-none items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-control bg-accent text-lead font-extrabold text-on-accent">
+            {/* Знак ведёт на витрину: это единственный выход «домой», который
+                человек ищет не глядя, и на любом экране он должен работать */}
+            <Link href="/" className="flex flex-none items-center gap-3 text-ink">
+              <span className="flex size-8 items-center justify-center rounded-control bg-accent text-lead font-extrabold text-on-accent">
                 М
-              </div>
+              </span>
               {/* На узком экране остаётся только знак: строка целиком не помещается
                   и утаскивала бы страницу вбок (§7.5) */}
               <span className="hidden text-lead font-extrabold whitespace-nowrap sm:inline">
                 Маркетплейс&nbsp;для&nbsp;бизнеса
               </span>
-            </div>
+            </Link>
 
             <HeaderSearch />
 

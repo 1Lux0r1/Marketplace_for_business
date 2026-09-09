@@ -26,7 +26,7 @@ import { SearchIcon } from '@/ui/icons'
  */
 export function HeaderSearch() {
   const pathname = usePathname()
-  const onStorefront = pathname === '/catalog' || pathname.startsWith('/catalog/')
+  const onStorefront = pathname === '/'
 
   if (onStorefront) {
     return (
@@ -42,7 +42,7 @@ export function HeaderSearch() {
 
   return (
     <Link
-      href="/catalog#search"
+      href="/#search"
       className="flex h-11 min-w-0 max-w-[620px] flex-1 items-center gap-3 rounded-pill border border-line-strong bg-surface-2 px-4 text-ink-2 transition-colors duration-150 hover:border-accent hover:text-ink"
     >
       <SearchIcon size={19} />

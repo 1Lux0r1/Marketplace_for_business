@@ -57,7 +57,7 @@ function ListingCard({ item }: { item: StorefrontCard }) {
         {/* Ссылка растянута на всю карточку: на витрине человек целится
             в карточку, а не в её заголовок */}
         <h2 className="text-lead font-extrabold text-ink">
-          <Link href={`/catalog?id=${item.id}`} className="after:absolute after:inset-0 hover:text-accent-strong">
+          <Link href={`/?id=${item.id}`} className="after:absolute after:inset-0 hover:text-accent-strong">
             {item.title}
           </Link>
         </h2>
@@ -100,7 +100,7 @@ export function NothingFound({ hasFilters }: { hasFilters: boolean }) {
       }
       action={
         hasFilters ? (
-          <Button href="/catalog">
+          <Button href="/">
             Сбросить фильтры
           </Button>
         ) : undefined
@@ -126,7 +126,7 @@ export function NotPublished() {
       title="Такой услуги на витрине нет"
       description="Возможно, подрядчик снял её или ссылка устарела. Посмотрите, что есть сейчас."
       action={
-        <Button href="/catalog">
+        <Button href="/">
           Ко всем услугам
         </Button>
       }
@@ -138,7 +138,7 @@ export function ListingDetails({ item }: { item: StorefrontCard }) {
   return (
     <div className="flex flex-col gap-7">
       <Link
-        href="/catalog"
+        href="/"
         className="inline-flex min-h-11 items-center self-start text-body font-semibold text-accent-strong hover:text-accent"
       >
         ← ко всем услугам
@@ -191,9 +191,9 @@ export function ListingDetails({ item }: { item: StorefrontCard }) {
 
           {/* Куда приедут — первый вопрос клиента, и ответ на него не должен
               находиться только через фильтр */}
-          {item.zones.length > 0 && (
+          {item.zoneNames.length > 0 && (
             <p className="text-caption text-ink-2">
-              Выезд: <span className="text-ink">{item.zones.join(', ')}</span>
+              Выезд: <span className="text-ink">{item.zoneNames.join(', ')}</span>
             </p>
           )}
 

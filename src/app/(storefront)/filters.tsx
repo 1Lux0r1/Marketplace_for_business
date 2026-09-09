@@ -48,7 +48,7 @@ export function Filters({
   const [open, setOpen] = useState(advancedUsed)
 
   return (
-    <form action="/catalog" className="flex flex-col gap-3.5">
+    <form action="/" className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-end gap-3">
         <label className="min-w-[16rem] flex-1">
           <span className="sr-only">Поиск по услугам</span>
@@ -104,7 +104,7 @@ export function Filters({
 
         {advancedUsed && (
           <a
-            href="/catalog"
+            href="/"
             className="inline-flex min-h-11 items-center text-caption font-semibold text-ink-3 hover:text-ink"
           >
             Сбросить всё

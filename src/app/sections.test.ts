@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Org, User } from '@/modules/platform'
-import { existsSync } from 'node:fs'
+import { readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { sectionsFor, plannedFor, type Section } from './sections'
 
 /**
@@ -96,8 +97,10 @@ describe('меню собирается из ролей (§7.1)', () => {
     ])
   })
 
-  it('незашедший видит витрину: каталог — основной путь (§1)', () => {
-    expect(labels(plannedFor(null, null))).toContain('Найти услугу')
+  it('незашедший видит витрину, и только её (§1)', () => {
+    // Разделы за входом ему показывать нечем: компании у него ещё нет,
+    // и «Документы и счета» ответили бы только «сначала войдите»
+    expect(labels(plannedFor(null, null))).toEqual(['Найти услугу'])
   })
 
   it('у каждого раздела свой адрес: два пункта на один экран — ошибка', () => {
@@ -142,14 +145,42 @@ describe('системные термины не протекают в меню 
 })
 
 /**
+ * Адреса всех экранов, собранные из файлов, а не из списка в коде: список
+ * можно поправить и забыть, файл — нет.
+ *
+ * Папка в скобках в адрес не попадает — так Next разделяет экраны, у которых
+ * должны быть свои состояния загрузки и ошибки, но общий адрес. Витрина живёт
+ * в `(storefront)` и открывается на `/`, поэтому проверка обязана считать
+ * адрес так же, как его считает сам Next, иначе она поймает не поломку меню,
+ * а собственное незнание правил.
+ */
+function screenRoutes(dir = new URL('.', import.meta.url), prefix = ''): string[] {
+  const routes: string[] = []
+
+  for (const entry of readdirSync(fileURLToPath(dir), { withFileTypes: true })) {
+    if (entry.isFile() && entry.name === 'page.tsx') routes.push(prefix || '/')
+    if (!entry.isDirectory()) continue
+
+    const grouping = entry.name.startsWith('(') && entry.name.endsWith(')')
+    routes.push(
+      ...screenRoutes(
+        new URL(`${entry.name}/`, dir),
+        grouping ? prefix : `${prefix}/${entry.name}`,
+      ),
+    )
+  }
+
+  return routes
+}
+
+/**
  * Пункт меню, ведущий на несуществующий экран, — сломанный интерфейс: человек
  * нажимает и попадает на страницу ошибки. Раздел показывается только когда
  * его экран готов, и это держится здесь, а не на памяти.
- *
- * Проверка смотрит на файлы страниц, а не на список в коде: список можно
- * поправить и забыть, файл — нет.
  */
 describe('меню не ведёт в никуда', () => {
+  const screens = new Set(screenRoutes())
+
   const everyone = [
     sectionsFor(org({ isContractor: true }), user()),
     sectionsFor(org({ isPlatform: true, isClient: false }), user({ role: 'operator' })),
@@ -160,9 +191,12 @@ describe('меню не ведёт в никуда', () => {
     expect(everyone.length).toBeGreaterThan(0)
   })
 
+  it('витрина на главной: каталог — основной путь клиента (§1, §7.1)', () => {
+    expect(screens).toContain('/')
+  })
+
   it.each([...new Set(everyone.map((s) => s.href))])('за %s есть экран', (href) => {
-    const page = new URL(`.${href}/page.tsx`, import.meta.url)
-    expect(existsSync(page), `нет файла экрана для ${href}`).toBe(true)
+    expect([...screens], `нет экрана для ${href}`).toContain(href)
   })
 
   it('неготовые разделы описаны, но не показаны', () => {

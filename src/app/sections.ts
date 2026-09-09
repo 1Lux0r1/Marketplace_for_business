@@ -41,7 +41,9 @@ export type Section = {
 
 /** Заказчик: выбирает услугу, следит за заказом, платит, принимает работу. */
 const client: Section[] = [
-  { href: '/catalog', label: 'Найти услугу', icon: 'search', group: 'client', ready: true },
+  // Витрина — это и есть главная (§7.1, макет `design/Main.dc.html`): каталог —
+  // основной путь клиента, и отдельного начального экрана перед ним нет.
+  { href: '/', label: 'Найти услугу', icon: 'search', group: 'client', ready: true },
   { href: '/orders', label: 'Мои заказы', icon: 'bag', group: 'client' },
   { href: '/documents', label: 'Документы и счета', icon: 'doc', group: 'client' },
   { href: '/company', label: 'Компания', icon: 'building', group: 'client', ready: true },
@@ -78,8 +80,11 @@ const operator: Section[] = [
  * Что видит человек. Ничего не знает про экраны — только про роли,
  * поэтому проверяется без базы и без браузера.
  *
- * Никого не вошло — показываем витрину: незарегистрированный человек пришёл
- * смотреть каталог, это основной путь (§1).
+ * Никого не вошло — показываем только витрину: незарегистрированный человек
+ * пришёл смотреть каталог, это основной путь (§1). Остальные разделы клиента
+ * ему показывать нельзя — за каждым стоит его компания, которой у него ещё нет,
+ * и пункт меню, который всегда отвечает «сначала войдите», это тупик, а не
+ * приглашение.
  *
  * ДОПУЩЕНИЕ (Q21): администратору §7.1 пунктов меню не задаёт, а свои экраны
  * у него появляются только в спринте 03. До тех пор он видит меню оператора —
@@ -96,7 +101,7 @@ export function sectionsFor(org: Org | null, user: User | null): Section[] {
  * не съехало в системный термин раньше, чем экран появится.
  */
 export function plannedFor(org: Org | null, user: User | null): Section[] {
-  if (!org || !user) return client
+  if (!org || !user) return client.filter((section) => section.href === '/')
 
   if (org.isPlatform) return operator
 
