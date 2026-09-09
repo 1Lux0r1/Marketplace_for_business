@@ -88,6 +88,20 @@
   --neutral-strong: #4a5361;
   --neutral-tint: #eff1f4;
   --skeleton: #eef0f3;
+
+  /* Декоративные тона категорий: у них нет смысла «успешно» или «проблема»,
+     поэтому они не спорят со статусами. Каждый отстоит от любого статусного
+     цвета не меньше чем на 25° по цветовому кругу — это проверяет тест. */
+  --deco-1: #e9f0d6;
+  --deco-1-ink: #4f6215;
+  --deco-2: #dceefb;
+  --deco-2-ink: #1f5f8b;
+  --deco-3: #e3e5fb;
+  --deco-3-ink: #3a3fa0;
+  --deco-4: #f2e3fa;
+  --deco-4-ink: #7229a0;
+  --deco-5: #fbe4ee;
+  --deco-5-ink: #9b2c62;
 }
 
 /* ─── Тёмная тема. Тот же набор целиком: ни один токен не живёт только здесь ───
@@ -124,6 +138,17 @@
   --neutral-strong: #c3cad4;
   --neutral-tint: #232932;
   --skeleton: #232932;
+
+  --deco-1: #1e2810;
+  --deco-1-ink: #b3cd6b;
+  --deco-2: #0f2635;
+  --deco-2-ink: #79c3ee;
+  --deco-3: #1a1c3d;
+  --deco-3-ink: #9aa2f0;
+  --deco-4: #2a1236;
+  --deco-4-ink: #d29aec;
+  --deco-5: #37121f;
+  --deco-5-ink: #f095bd;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -158,6 +183,17 @@
     --neutral-strong: #c3cad4;
     --neutral-tint: #232932;
     --skeleton: #232932;
+
+  --deco-1: #1e2810;
+  --deco-1-ink: #b3cd6b;
+  --deco-2: #0f2635;
+  --deco-2-ink: #79c3ee;
+  --deco-3: #1a1c3d;
+  --deco-3-ink: #9aa2f0;
+  --deco-4: #2a1236;
+  --deco-4-ink: #d29aec;
+  --deco-5: #37121f;
+  --deco-5-ink: #f095bd;
   }
 }
 
@@ -194,6 +230,16 @@
   --color-neutral-strong: var(--neutral-strong);
   --color-neutral-tint: var(--neutral-tint);
   --color-skeleton: var(--skeleton);
+  --color-deco-1: var(--deco-1);
+  --color-deco-1-ink: var(--deco-1-ink);
+  --color-deco-2: var(--deco-2);
+  --color-deco-2-ink: var(--deco-2-ink);
+  --color-deco-3: var(--deco-3);
+  --color-deco-3-ink: var(--deco-3-ink);
+  --color-deco-4: var(--deco-4);
+  --color-deco-4-ink: var(--deco-4-ink);
+  --color-deco-5: var(--deco-5);
+  --color-deco-5-ink: var(--deco-5-ink);
 
   --font-sans: "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
 

@@ -12,7 +12,13 @@ export function isAvailable(): boolean {
 }
 
 export function storefront(): Promise<StorefrontPage> {
-  return Promise.resolve({ items: [], total: 0, categories: [], zones: catalog.listZones() })
+  return Promise.resolve({
+    items: [],
+    total: 0,
+    categories: [],
+    zones: catalog.listZones(),
+    priceCeilingKopecks: 0n,
+  })
 }
 
 export function storefrontCard(): Promise<StorefrontCard | null> {

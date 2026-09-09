@@ -175,3 +175,47 @@ describe('типографическая шкала (§7.3)', () => {
     expect(declared.sort()).toEqual(Object.keys(scale).sort())
   })
 })
+
+/**
+ * Декоративные тона категорий (§7.2, дополнено 07.09.2026).
+ *
+ * Разработчик попросил больше красок. Правило «статусный цвет никогда
+ * не используется как акцент, и наоборот» при этом никуда не делось, поэтому
+ * краски пришли отдельной ролью, а не расширением статусной палитры: у тона
+ * категории нет смысла «успешно», «выгодно» или «проблема», он просто
+ * различает санобработку и электрику.
+ *
+ * Чтобы это осталось правдой, тон категории обязан отстоять от каждого
+ * статусного не меньше чем на 25° по цветовому кругу. Иначе лаймовая плашка
+ * начнёт читаться как «ждём приёмки», и мы вернёмся к тому, из-за чего
+ * первый вариант иллюстраций пришлось переделывать.
+ */
+const DECO = [1, 2, 3, 4, 5] as const
+const SEMANTIC = ['--accent', '--promo', '--err', '--ok', '--warn'] as const
+
+describe.each([
+  ['светлая', ':root {'],
+  ['тёмная', '.dark {'],
+])('декоративные тона, %s тема (§7.2)', (_name, header) => {
+  const palette = paletteOf(header)
+
+  it.each(DECO)('тон %i не совпадает ни с одним статусным', (n) => {
+    const ink = palette[`--deco-${n}-ink`]!
+    const collisions = SEMANTIC.filter((role) => hueDistance(ink, palette[role]!) < 25).map(
+      (role) => `${role} (${Math.round(hueDistance(ink, palette[role]!))}°)`,
+    )
+    expect(collisions, `тон ${n} слишком близок к: ${collisions.join(', ')}`).toEqual([])
+  })
+
+  it.each(DECO)('рисунок на подложке %i читается: не ниже 3:1 (§7.6)', (n) => {
+    expect(contrast(palette[`--deco-${n}-ink`]!, palette[`--deco-${n}`]!)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('тона различаются между собой, иначе они не различают категории', () => {
+    const hues = DECO.map((n) => palette[`--deco-${n}-ink`]!)
+    const closest = Math.min(
+      ...hues.flatMap((a, i) => hues.slice(i + 1).map((b) => hueDistance(a, b))),
+    )
+    expect(closest).toBeGreaterThanOrEqual(30)
+  })
+})

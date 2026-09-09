@@ -1,12 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { cx } from './cx'
+import { useDialogBehavior } from './use-dialog'
 
 /**
  * Шторка, выезжающая справа. Ведёт себя как модальное окно (§7.6):
  * фокус внутри, `Esc` закрывает, при закрытии фокус возвращается туда,
- * откуда её открыли.
+ * откуда её открыли. Само это поведение живёт в `use-dialog.ts` — оно общее
+ * с окном подтверждения, и двух копий у него быть не должно.
  *
  * На узком экране занимает всю ширину: сбоку на телефоне ей места нет (§7.5).
  * Движение — 200 мс и только чтобы объяснить, откуда взялась (§7.7);
@@ -19,65 +21,8 @@ type Props = {
   children: ReactNode
 }
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
 export function Drawer({ open, onClose, title, children }: Props) {
-  const panel = useRef<HTMLDivElement>(null)
-  const openerRef = useRef<HTMLElement | null>(null)
-
-  // Куда вернуть фокус: запоминаем до того, как заберём его в шторку
-  useEffect(() => {
-    if (open) openerRef.current = document.activeElement as HTMLElement | null
-  }, [open])
-
-  const close = useCallback(() => {
-    onClose()
-    openerRef.current?.focus()
-  }, [onClose])
-
-  useEffect(() => {
-    if (!open) return
-
-    const node = panel.current
-    node?.querySelector<HTMLElement>(FOCUSABLE)?.focus()
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        close()
-        return
-      }
-      if (event.key !== 'Tab' || !node) return
-
-      // Обход по кругу внутри шторки: иначе Tab уводит на страницу под ней,
-      // и человек с клавиатуры не понимает, где он
-      const items = [...node.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-        (el) => el.offsetParent !== null,
-      )
-      const first = items[0]
-      const last = items.at(-1)
-      if (!first || !last) return
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    // Страница под шторкой не должна прокручиваться вместе с ней
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.removeEventListener('keydown', onKeyDown)
-      document.body.style.overflow = previousOverflow
-    }
-  }, [open, close])
+  const { panel, close } = useDialogBehavior(open, onClose)
 
   if (!open) return null
 

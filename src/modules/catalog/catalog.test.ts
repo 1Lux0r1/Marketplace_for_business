@@ -374,6 +374,39 @@ describe('витрина', () => {
     expect((await catalog.searchListings({ query: 'бухгалтерия' })).items).toEqual([])
   })
 
+  it('отбирает по вилке цены, а не по уже полученной странице', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Дёшево', rubles: 500 })
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Средне', rubles: 5000 })
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Дорого', rubles: 50_000 })
+
+    const mid = await catalog.searchListings({
+      priceFromKopecks: 100_000n,
+      priceToKopecks: 1_000_000n,
+    })
+    expect(mid.items.map((i) => i.title)).toEqual(['Средне'])
+    // Счётчик обязан совпасть с отбором: иначе «нашлось 3» при одной карточке
+    expect(mid.total).toBe(1)
+
+    // Граница включительная: «до 5 000 ₽» показывает и карточку ровно за 5 000
+    const upTo = await catalog.searchListings({ priceToKopecks: 500_000n })
+    expect(upTo.items.map((i) => i.title).sort()).toEqual(['Дёшево', 'Средне'])
+
+    const cheap = await catalog.searchListings({ priceToKopecks: 100_000n })
+    expect(cheap.items.map((i) => i.title)).toEqual(['Дёшево'])
+  })
+
+  it('границы вилки включаются, а не отбрасываются', async () => {
+    const { cleaning, contractor } = await makeStorefront()
+    await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Ровно', rubles: 5000 })
+
+    const exact = await catalog.searchListings({
+      priceFromKopecks: 500_000n,
+      priceToKopecks: 500_000n,
+    })
+    expect(exact.items).toHaveLength(1)
+  })
+
   it('символы подстановки в запросе ничего не ломают', async () => {
     const { cleaning, contractor } = await makeStorefront()
     await makeListing({ contractorId: contractor.id, categoryId: cleaning, title: 'Уборка', rubles: 5000 })

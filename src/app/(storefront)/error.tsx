@@ -6,7 +6,7 @@ import { Button, ErrorState } from '@/ui'
  * Состояние ошибки (§7.4): что случилось и что делать, с кнопкой повтора.
  * Без извинений и без кода ошибки без объяснения.
  */
-export default function CatalogError({ reset }: { error: Error; reset: () => void }) {
+export default function StorefrontError({ reset }: { error: Error; reset: () => void }) {
   return (
     <ErrorState
       title="Витрина не загрузилась"

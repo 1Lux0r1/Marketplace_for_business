@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, lte, sql } from 'drizzle-orm'
 import { getDb, type Executor } from '@/shared/db'
 import { uuidv7 } from '@/shared/id'
 import * as platform from '@/modules/platform'
@@ -407,10 +407,33 @@ function isUniqueViolation(error: unknown, constraint: string): boolean {
  * подрядчика. Пустой список у карточки означает «везде, где работает он»,
  * а не «нигде».
  */
+/**
+ * Самая дорогая карточка на витрине — верхняя граница ползунка цены.
+ *
+ * Нужна фронтенду, чтобы не выдумывать «до 100 000 ₽» там, где всё дешевле
+ * тридцати тысяч: ползунок с выдуманным потолком почти весь ходит вхолостую.
+ *
+ * Считает база: перебирать карточки в приложении ради максимума — это тот же
+ * запрос, только медленнее и с лишним трафиком.
+ */
+export async function storefrontPriceCeiling(): Promise<bigint> {
+  const db = getDb()
+  const [row] = await db
+    .select({ max: sql<string | null>`max(${listings.priceKopecks})` })
+    .from(listings)
+    .innerJoin(contractors, eq(listings.contractorId, contractors.id))
+    .where(and(eq(listings.status, 'published'), eq(contractors.status, 'active')))
+
+  return row?.max ? BigInt(row.max) : 0n
+}
+
 export async function searchListings(input: {
   categoryId?: string | undefined
   zoneCode?: string | undefined
   query?: string | undefined
+  /** Вилка цены в копейках, как везде (§6). Границы включительно. */
+  priceFromKopecks?: bigint | undefined
+  priceToKopecks?: bigint | undefined
   limit?: number | undefined
   offset?: number | undefined
 }): Promise<SearchResult> {
@@ -428,6 +451,14 @@ export async function searchListings(input: {
     eq(contractors.status, 'active'),
   ]
   if (input.categoryId) conditions.push(eq(listings.categoryId, input.categoryId))
+  // Вилка цены считается в базе, а не на уже полученной странице: иначе
+  // «нашлось 8» и постраничная разбивка врали бы
+  if (input.priceFromKopecks !== undefined) {
+    conditions.push(gte(listings.priceKopecks, input.priceFromKopecks))
+  }
+  if (input.priceToKopecks !== undefined) {
+    conditions.push(lte(listings.priceKopecks, input.priceToKopecks))
+  }
   if (text) {
     const pattern = `%${text.replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
     conditions.push(
