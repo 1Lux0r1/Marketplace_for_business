@@ -43,6 +43,13 @@
       "when": 1788794140034,
       "tag": "0005_silly_betty_brant",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789492763490,
+      "tag": "0006_friendly_miss_america",
+      "breakpoints": true
     }
   ]
 }

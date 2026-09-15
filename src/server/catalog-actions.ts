@@ -2,9 +2,11 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import * as admin from '@/modules/admin'
 import * as catalog from '@/modules/catalog'
 import * as platform from '@/modules/platform'
 import * as notifications from '@/modules/notifications'
+import { getDb } from '@/shared/db'
 import { logger } from '@/shared/logger'
 import { MANUAL_VERDICT, requireOperator } from './catalog-queries'
 
@@ -63,6 +65,15 @@ export async function createContractorAction(input: unknown): Promise<FormResult
     await catalog.setContractorCategories(contractor.id, data.categoryIds)
     await catalog.setContractorZones(contractor.id, data.zoneCodes)
 
+    await admin.logChange(getDb(), {
+      actor: actorOf(access.user),
+      action: 'contractor.created',
+      entity: 'catalog.contractor',
+      entityId: contractor.id,
+      entityLabel: await contractorLabel(contractor.id),
+      after: snapshot(await catalog.getContractor(contractor.id)),
+    })
+
     revalidatePath('/operator/contractors')
     return { ok: true, id: contractor.id, message: `${org.name} заведён как подрядчик` }
   } catch (error: unknown) {
@@ -88,9 +99,27 @@ export async function updateContractorAction(input: unknown): Promise<FormResult
   const data = parsed.data
 
   try {
+    // Читаем ДО изменения: «было» взять больше неоткуда, а журнал без «было»
+    // не отвечает на вопрос, ради которого его заводили
+    const was = await catalog.getContractor(data.contractorId)
+
     await catalog.setContractorStatus(data.contractorId, data.status)
     await catalog.setContractorCategories(data.contractorId, data.categoryIds)
     await catalog.setContractorZones(data.contractorId, data.zoneCodes)
+
+    // Читаем и ПОСЛЕ: «стало» пишется названиями, а не списком идентификаторов.
+    // «категории: 3 штуки» на вопрос «что изменилось» не отвечает
+    const now = await catalog.getContractor(data.contractorId)
+
+    await admin.logChange(getDb(), {
+      actor: actorOf(access.user),
+      action: 'contractor.updated',
+      entity: 'catalog.contractor',
+      entityId: data.contractorId,
+      entityLabel: await contractorLabel(data.contractorId),
+      before: snapshot(was),
+      after: snapshot(now),
+    })
 
     revalidatePath('/operator/contractors')
     return { ok: true, message: 'Сохранено' }
@@ -166,10 +195,59 @@ export async function decideVerificationAction(input: unknown): Promise<FormResu
         note: parsed.data.note ?? null,
       },
     })
+    await admin.logChange(getDb(), {
+      actor: actorOf(access.user),
+      action: parsed.data.verified ? 'contractor.verified' : 'contractor.rejected',
+      entity: 'catalog.contractor',
+      entityId: parsed.data.contractorId,
+      entityLabel: await contractorLabel(parsed.data.contractorId),
+      after: { verified: parsed.data.verified },
+      reason: parsed.data.note,
+    })
+
     revalidatePath('/operator/verification')
     return { ok: true, message: parsed.data.verified ? 'Подрядчик включён' : 'Отклонено' }
   } catch (error: unknown) {
     return asFormResult(error, 'не удалось записать решение')
+  }
+}
+
+/**
+ * Что записать в журнал про подрядчика — названиями, а не идентификаторами.
+ *
+ * Журнал читают через полгода, и «категории: 3 штуки» на вопрос «что
+ * изменилось» не отвечает. А идентификаторы не отвечают тем более.
+ */
+function snapshot(card: Awaited<ReturnType<typeof catalog.getContractor>>): Record<string, unknown> {
+  return {
+    status: card.status,
+    categories: card.categories.map((category) => category.name),
+    zones: card.zones.map((zone) => zone.name),
+  }
+}
+
+/**
+ * Автор действия — снимком: журнал обязан читаться и через год, когда этого
+ * человека уже не будет в системе (см. `modules/admin/schema.ts`).
+ */
+function actorOf(user: platform.User): admin.Actor {
+  return { id: user.id, fullName: user.fullName, role: user.role }
+}
+
+/**
+ * Как человек называет подрядчика. Без этого в журнале останется
+ * идентификатор, по которому через полгода ничего не узнать.
+ *
+ * Название не критично: не нашлось — запись всё равно должна появиться,
+ * иначе сбой на подписи уронит само действие.
+ */
+async function contractorLabel(contractorId: string): Promise<string | undefined> {
+  try {
+    const contractor = await catalog.getContractor(contractorId)
+    const org = await platform.getOrg(contractor.orgId)
+    return org.name
+  } catch {
+    return undefined
   }
 }
 

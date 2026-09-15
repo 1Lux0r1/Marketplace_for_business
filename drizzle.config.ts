@@ -9,7 +9,7 @@ export default defineConfig({
   dbCredentials: { url: process.env.DATABASE_URL ?? '' },
   schemaFilter: [
     'platform', 'catalog', 'intake', 'matching', 'deal',
-    'documents', 'payments', 'notifications', 'analytics',
+    'documents', 'payments', 'notifications', 'analytics', 'admin',
   ],
   verbose: true,
   strict: true,
