@@ -1,7 +1,6 @@
 import 'server-only'
 import * as admin from '@/modules/admin'
-import type * as platform from '@/modules/platform'
-import { currentUser } from '@/server/session'
+import { requireAdmin, type Access } from '@/server/session'
 
 /**
  * Чтение для экранов администратора.
@@ -15,17 +14,9 @@ export function isAvailable(): boolean {
   return true
 }
 
-export type AdminAccess =
-  | { allowed: true; user: platform.User }
-  | { allowed: false; reason: 'anonymous' | 'forbidden' }
-
-export async function requireAdmin(): Promise<AdminAccess> {
-  const user = await currentUser()
-  if (!user) return { allowed: false, reason: 'anonymous' }
-  // Ровно `admin`, а не «не ниже»: у оператора здесь дел нет
-  if (user.role !== 'admin') return { allowed: false, reason: 'forbidden' }
-  return { allowed: true, user }
-}
+/** Проверка прав живёт в `session.ts` — одна на роль (§6). */
+export { requireAdmin }
+export type AdminAccess = Access
 
 export type ChangeRow = {
   id: string

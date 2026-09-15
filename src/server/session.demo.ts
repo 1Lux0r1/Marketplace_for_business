@@ -22,3 +22,23 @@ export function startSession(): Promise<void> {
 export function endSession(): Promise<void> {
   return Promise.resolve()
 }
+
+/**
+ * В демо нет ни базы, ни сессий: «разрешено» здесь было бы дырой в наборе
+ * файлов, который лежит в открытом доступе.
+ */
+export type Access<Role extends string = 'anonymous' | 'forbidden'> =
+  | { allowed: true; user: platform.User }
+  | { allowed: false; reason: Role }
+
+export function requireUser(): Promise<Access<'anonymous'>> {
+  return Promise.resolve({ allowed: false, reason: 'anonymous' })
+}
+
+export function requireOperator(): Promise<Access> {
+  return Promise.resolve({ allowed: false, reason: 'anonymous' })
+}
+
+export function requireAdmin(): Promise<Access> {
+  return Promise.resolve({ allowed: false, reason: 'anonymous' })
+}

@@ -2,7 +2,7 @@ import 'server-only'
 import * as catalog from '@/modules/catalog'
 import * as platform from '@/modules/platform'
 import { formatPhone } from '@/shared/phone'
-import { currentUser } from '@/server/session'
+import { requireUser, type Access } from '@/server/session'
 
 /**
  * Чтение для кабинета клиента.
@@ -21,14 +21,9 @@ export function isAvailable(): boolean {
   return true
 }
 
-export type CabinetAccess =
-  | { allowed: true; user: platform.User }
-  | { allowed: false; reason: 'anonymous' }
-
-export async function requireUser(): Promise<CabinetAccess> {
-  const user = await currentUser()
-  return user ? { allowed: true, user } : { allowed: false, reason: 'anonymous' }
-}
+/** Проверка прав живёт в `session.ts` — одна на роль (§6). */
+export { requireUser }
+export type CabinetAccess = Access<'anonymous'>
 
 export type CompanyCard = {
   id: string

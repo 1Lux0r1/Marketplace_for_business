@@ -1,7 +1,7 @@
 import 'server-only'
 import * as catalog from '@/modules/catalog'
 import * as platform from '@/modules/platform'
-import { currentUser } from '@/server/session'
+import { requireOperator, type Access } from '@/server/session'
 
 /**
  * Чтение для экранов оператора.
@@ -14,16 +14,9 @@ import { currentUser } from '@/server/session'
  * как угодно, но данные не должны уехать тому, кому не положено.
  */
 
-export type OperatorAccess =
-  | { allowed: true; user: platform.User }
-  | { allowed: false; reason: 'anonymous' | 'forbidden' }
-
-export async function requireOperator(): Promise<OperatorAccess> {
-  const user = await currentUser()
-  if (!user) return { allowed: false, reason: 'anonymous' }
-  if (!platform.hasRole(user, 'operator')) return { allowed: false, reason: 'forbidden' }
-  return { allowed: true, user }
-}
+/** Проверка прав живёт в `session.ts` — одна на роль (§6). */
+export { requireOperator }
+export type OperatorAccess = Access
 
 /** Строка списка: подрядчик вместе с названием компании и его категориями. */
 export type ContractorRow = {

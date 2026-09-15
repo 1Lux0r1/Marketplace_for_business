@@ -44,7 +44,16 @@ const client: Section[] = [
   // Витрина — это и есть главная (§7.1, макет `design/Main.dc.html`): каталог —
   // основной путь клиента, и отдельного начального экрана перед ним нет.
   { href: '/', label: 'Найти услугу', icon: 'search', group: 'client', ready: true },
-  { href: '/orders', label: 'Мои заказы', icon: 'bag', group: 'client' },
+  /**
+   * Заявки клиента живут ЗДЕСЬ, а не отдельным пунктом.
+   *
+   * §7.1 запрещает показывать клиенту «Заявки»: для него заявка и заказ —
+   * одно и то же желание «чтобы мне сделали работу», и два пункта заставили бы
+   * его думать про нашу кухню. Оба пути сходятся в одной сделке (§1), значит
+   * сходятся и на одном экране: сейчас здесь заявки, дальше к ним добавятся
+   * заказы из каталога.
+   */
+  { href: '/orders', label: 'Мои заказы', icon: 'bag', group: 'client', ready: true },
   { href: '/documents', label: 'Документы и счета', icon: 'doc', group: 'client' },
   { href: '/company', label: 'Компания', icon: 'building', group: 'client', ready: true },
 ]
@@ -67,6 +76,13 @@ const operator: Section[] = [
     href: '/operator/verification',
     label: 'Очередь',
     icon: 'inbox',
+    group: 'staff',
+    ready: true,
+  },
+  {
+    href: '/operator/requests',
+    label: 'Заявки',
+    icon: 'doc',
     group: 'staff',
     ready: true,
   },

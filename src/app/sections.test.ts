@@ -90,6 +90,7 @@ describe('меню собирается из ролей (§7.1)', () => {
     const staff = org({ isPlatform: true, isClient: false, name: 'Площадка' })
     expect(labels(plannedFor(staff, user({ role: 'operator' })))).toEqual([
       'Очередь',
+      'Заявки',
       'Сделки',
       'Подрядчики',
       'Споры',
