@@ -76,6 +76,8 @@ describe('права оператора', () => {
       ['server/company-queries.ts', 'server/company-queries.demo.ts'],
       ['server/company-actions.ts', 'server/company-actions.demo.ts'],
       ['server/admin-queries.ts', 'server/admin-queries.demo.ts'],
+      ['server/request-queries.ts', 'server/request-queries.demo.ts'],
+      ['server/request-actions.ts', 'server/request-actions.demo.ts'],
     ]
 
     for (const [real, demo] of pairs as Array<[string, string]>) {
@@ -137,9 +139,48 @@ describe('права оператора', () => {
    * и оператора тоже — а ему здесь делать нечего.
    */
   it('права администратора — это именно admin, а не «оператор и выше»', () => {
-    const code = read('server/admin-queries.ts')
-    expect(code).toContain("user.role !== 'admin'")
-    expect(code, 'проверка через hasRole пропустила бы оператора').not.toContain('hasRole')
+    const code = read('server/session.ts')
+    const body = code.slice(code.indexOf('export async function requireAdmin'))
+    expect(body).toContain("user.role !== 'admin'")
+    expect(body, 'проверка через hasRole пропустила бы сюда оператора').not.toContain('hasRole')
+  })
+
+  /**
+   * Проверка роли должна быть ровно одна на роль. Три копии под тремя
+   * именами однажды разойдутся: поправят две.
+   */
+  it('проверки прав живут в одном месте', () => {
+    const others = readdirSync(join(ROOT, 'server'))
+      .filter((file) => file.endsWith('.ts') && !file.startsWith('session'))
+      .filter((file) => /^export (async )?function require/mu.test(read(join('server', file))))
+
+    expect(others, 'своя проверка прав вместо общей из session.ts').toEqual([])
+  })
+
+  /**
+   * Заглушка, сославшаяся на соседа относительным путём, утаскивает
+   * в демо настоящий файл: подмена срабатывает только на `@/server/...`.
+   * Так в демо однажды уехала настоящая сессия с куками, и сборка легла
+   * не на тестах, а через минуту.
+   */
+  it('заглушки ссылаются друг на друга через @/server, а не относительно', () => {
+    const files = readdirSync(join(ROOT, 'server'))
+    const stubbed = new Set(
+      files.filter((f) => f.endsWith('.demo.ts')).map((f) => f.replace('.demo.ts', '')),
+    )
+
+    // Опасен не всякий относительный импорт, а только импорт ЗНАЧЕНИЯ
+    // из файла, у которого есть заглушка: типы на сборке стираются,
+    // а файл без заглушки и не подменяется
+    const leaky: string[] = []
+    for (const file of files.filter((f) => f.endsWith('.demo.ts'))) {
+      const code = read(join('server', file))
+      for (const m of code.matchAll(/^\s*(?:import|export)\s+(?!type\b)[^;\n]*\bfrom\s+'\.\/([\w-]+)'/gmu)) {
+        if (stubbed.has(m[1] as string)) leaky.push(`${file} → ./${m[1]}`)
+      }
+    }
+
+    expect(leaky, 'относительный импорт значения из подменяемого файла: подмена его не заметит').toEqual([])
   })
 
   /**
@@ -151,11 +192,17 @@ describe('права оператора', () => {
     expect(code).not.toMatch(/export const (update|edit|delete|remove|clear)\w*Change/u)
   })
 
+  /**
+   * В демо нет ни базы, ни сессий: «разрешено» там было бы дырой в наборе
+   * файлов, который лежит в открытом доступе. Проверки переехали в `session`,
+   * значит и заглушка теперь одна — смотрим на неё.
+   */
   it('заглушка прав для демо никого не пускает', () => {
-    // В демо нет ни базы, ни сессий: «разрешено» здесь было бы дырой
-    // в наборе файлов, который лежит в открытом доступе
-    expect(read('server/catalog-queries.demo.ts')).toContain('allowed: false')
-    expect(read('server/catalog-queries.demo.ts')).not.toContain('allowed: true')
+    const stub = read('server/session.demo.ts')
+    expect(stub).toContain('allowed: false')
+    expect(stub, 'в демо не должно быть пути, который кого-то пускает').not.toContain(
+      'allowed: true,',
+    )
   })
 })
 

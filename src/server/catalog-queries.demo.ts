@@ -12,11 +12,9 @@ import type {
   VerificationRow,
 } from './catalog-queries'
 
+export { requireOperator } from '@/server/session'
 export type { ContractorRow, ContractorDetails, OperatorAccess, VerificationRow }
 
-export function requireOperator(): Promise<OperatorAccess> {
-  return Promise.resolve({ allowed: false, reason: 'anonymous' })
-}
 
 export function contractorRows(): Promise<ContractorRow[]> {
   return Promise.resolve([])

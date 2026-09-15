@@ -346,15 +346,25 @@ create index on catalog.coverage_zones (code);
 ```sql
 create schema intake;
 
+create sequence intake.request_number start with 1000;
+
 create table intake.requests (
   id             uuid primary key,
+  -- Номер, который человек называет вслух: «заявка №1240». Добавлен
+  -- в задаче 03-5: критерий приёмки требует показать клиенту подтверждение
+  -- с номером, а машинный идентификатор человеку не номер — его не
+  -- продиктовать по телефону и не найти глазами в письме
+  number         bigint not null default nextval('intake.request_number'),
   client_org_id  uuid not null,             -- platform.orgs, без FK
   created_by     uuid,                      -- platform.users, без FK; null для бота
+  site_id        uuid,                      -- platform.org_sites, без FK
   source         text not null check (source in ('web','telegram','operator')),
   raw_text       text,                      -- что написал клиент своими словами
   category_id    uuid,                      -- catalog.categories, без FK
   urgency        text not null default 'normal'
                  check (urgency in ('normal','urgent','planned')),
+  -- Адрес и зона — СНИМКОМ с точки на момент заявки. Точку переименуют,
+  -- перенесут или уберут в архив, а заявка обязана помнить, куда ехали
   address        text,
   zone_code      text,
   contact_name   text,

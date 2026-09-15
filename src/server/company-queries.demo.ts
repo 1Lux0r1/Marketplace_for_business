@@ -13,15 +13,13 @@ import type {
   SiteRow,
 } from './company-queries'
 
+export { requireUser } from '@/server/session'
 export type { CabinetAccess, CompanyCard, PersonRow, SiteRow }
 
 export function isAvailable(): boolean {
   return false
 }
 
-export function requireUser(): Promise<CabinetAccess> {
-  return Promise.resolve({ allowed: false, reason: 'anonymous' })
-}
 
 export function companyCard(): Promise<CompanyCard | null> {
   return Promise.resolve(null)
