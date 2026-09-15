@@ -393,6 +393,83 @@ create index on intake.request_events (request_id, id);
 насколько модель лучше правил. Это цифра для отчёта по гранту, и собирать её
 надо с первой заявки, а не когда понадобится.
 
+## schema `deal`
+
+```sql
+create sequence deal.deal_number start with 1000;
+
+-- Сделка. Ядро домена и то, за что берётся комиссия. У неё два входа
+-- (каталог и заявка) и один общий путь дальше
+create table deal.deals (
+  id             uuid primary key,
+  number         bigint not null default nextval('deal.deal_number'),
+  -- Происхождение ЯВНЫМ полем, а не выводится из заполненных ссылок:
+  -- от него зависят разрешённые переходы
+  source         text not null check (source in ('catalog','request')),
+  client_org_id  uuid not null,             -- platform.orgs, без FK
+  contractor_id  uuid,                      -- catalog.contractors, без FK
+  listing_id     uuid,                      -- catalog.listings, без FK
+  request_id     uuid,                      -- intake.requests, без FK
+  site_id        uuid,                      -- platform.org_sites, без FK
+  status         text not null default 'new'
+                 check (status in ('new','matching','quoted','accepted','paid',
+                                   'in_progress','act_issued','act_signed',
+                                   'completed','disputed','cancelled')),
+  -- Цена СНИМКОМ с карточки: цена в каталоге — оферта подрядчика на сегодня,
+  -- и завтрашняя правка не должна менять заключённую сделку
+  price_kopecks  bigint check (price_kopecks is null or price_kopecks >= 0),
+  qty            numeric,
+  unit           text,
+  title          text,
+  -- Ставка и ПРИЧИНА тоже снимком: через полгода придётся объяснить,
+  -- почему здесь 1 %, а рядом 13 % (docs/10-commission-rates.md)
+  commission_rate    numeric,
+  commission_reason  text,
+  commission_kopecks bigint check (commission_kopecks is null or commission_kopecks >= 0),
+  rated_at       timestamptz,
+  address        text,                      -- снимком с точки
+  zone_code      text,
+  scheduled_at   timestamptz,
+  created_at     timestamptz not null default now(),
+  status_at      timestamptz not null default now(),
+  -- Сделка из каталога обязана знать карточку, из заявки — заявку.
+  -- Держит база, а не только код: код можно обойти
+  check ((source = 'catalog' and listing_id is not null)
+      or (source = 'request' and request_id is not null))
+);
+create index on deal.deals (client_org_id, created_at desc);
+create index on deal.deals (contractor_id, created_at desc);
+create index on deal.deals (status, status_at);
+
+-- История сделки: каждый переход и кто его сделал. Это не журнал
+-- администратора: её читают клиент, подрядчик и оператор при разборе спора
+create table deal.deal_events (
+  id          bigserial primary key,
+  deal_id     uuid not null references deal.deals(id) on delete cascade,
+  from_status text,
+  to_status   text not null,
+  actor_id    uuid,                          -- null = перевела система
+  actor_name  text,
+  reason      text,                          -- обязательна у отмены и спора
+  payload     jsonb not null default '{}',
+  created_at  timestamptz not null default now()
+);
+create index on deal.deal_events (deal_id, id);
+```
+
+**Таблица переходов живёт в коде, а не в базе** —
+`src/modules/deal/statuses.ts`. Там же единственный ответ на вопрос
+«можно ли платить подрядчику»: `payoutAllowed`, и она говорит «да» ровно
+в статусе `completed`. Всё, что связано с деньгами, обязано спрашивать там,
+а не сравнивать статусы у себя (§8).
+
+**Порядок `accepted → paid → in_progress`** — то есть деньги у площадки
+до начала работ. Это допущение, см. Q22 в `docs/06-open-questions.md`:
+`docs/02-modules.md` рисует обратный порядок, но при нём удерживать
+в случае спора нечего.
+
+---
+
 ## Демо-данные
 
 `pnpm db:seed` создаёт: 2 организации-клиента, 6 подрядчиков в 4 категориях
