@@ -36,6 +36,50 @@ import type { StorefrontCard } from '@/server/storefront-queries'
  * - таблиц вместо карточек на витрине быть не должно (§7).
  */
 
+/**
+ * Шапка витрины и полоса гаранта. Отдельным куском, потому что их рисуют
+ * двое: витрина с живой базой и витрина демо, где отбор идёт в браузере.
+ */
+export function StorefrontIntro() {
+  return (
+    <>
+      <header className="flex flex-col gap-2">
+        <h1 className="text-page font-extrabold">Найти услугу</h1>
+        <p className="max-w-[70ch] text-body text-ink-2">
+          Готовые услуги с ценой от проверенных подрядчиков. Выбираете сами —
+          сделку ведём мы.
+        </p>
+      </header>
+
+      {/* Обещание гаранта стоит там, где человек выбирает, а не там, где уже
+          заплатил: это то, чем площадка отличается от доски объявлений (§1) */}
+      <GuaranteeBand />
+    </>
+  )
+}
+
+/** Найденное: счётчик и сетка, либо объяснение, почему пусто. */
+export function Results({
+  items,
+  total,
+  hasFilters,
+}: {
+  items: StorefrontCard[]
+  total: number
+  hasFilters: boolean
+}) {
+  if (items.length === 0) return <NothingFound hasFilters={hasFilters} />
+
+  return (
+    <>
+      <p className="text-caption text-ink-3">
+        {total === items.length ? `Нашлось: ${total}` : `Показаны ${items.length} из ${total}`}
+      </p>
+      <Grid items={items} />
+    </>
+  )
+}
+
 export function Grid({ items }: { items: StorefrontCard[] }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -109,13 +153,38 @@ export function NothingFound({ hasFilters }: { hasFilters: boolean }) {
   )
 }
 
-/** Демо на GitHub Pages: там нет базы, и витрине нечего показывать. */
+/** Демо на GitHub Pages: там нет базы, и экрану нечего показывать. */
 export function DemoWithoutDatabase() {
   return (
     <EmptyState
       title="Это демо без базы данных"
-      description="Здесь видно, как устроены экраны, но живых услуг нет: витрина читает их из базы, а в демо её не бывает. На рабочей установке этот раздел показывает настоящий каталог."
+      description="Здесь видно, как устроены экраны, но живых данных нет: этот раздел читает их из базы, а в демо её не бывает. На рабочей установке он показывает настоящие данные."
     />
+  )
+}
+
+/**
+ * Полоса над карточками демо.
+ *
+ * Витрина демо показывает выдуманные услуги и цены. Человек, которому
+ * показывают площадку, не должен принять их за рынок (§9.7), и узнать
+ * об этом он должен до того, как посмотрит на цены, а не после.
+ *
+ * Подача — как у состояния «нужно действие», а не как у выгоды: это
+ * предупреждение, а не предложение (§7.2).
+ */
+export function DemoDataNotice() {
+  return (
+    <p
+      role="note"
+      className="flex flex-wrap items-baseline gap-x-2 gap-y-1 rounded-card border border-warn bg-warn-tint px-4 py-3 text-table text-ink"
+    >
+      <span className="font-bold">Это демонстрация.</span>
+      <span className="text-ink-2">
+        Компании, цены и сроки ниже выдуманы — они показывают, как устроена
+        витрина, и не годятся для расчётов. Заказ и оплата в демо не работают.
+      </span>
+    </p>
   )
 }
 

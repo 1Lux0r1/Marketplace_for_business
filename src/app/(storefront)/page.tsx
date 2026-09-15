@@ -1,8 +1,8 @@
 import { isAvailable, storefront, storefrontCard } from '@/server/storefront-queries'
 import { CatalogError } from '@/modules/catalog'
-import { GuaranteeBand } from '@/ui'
 import { Filters } from './filters'
-import { DemoWithoutDatabase, Grid, ListingDetails, NothingFound, NotPublished } from './catalog-view'
+import { ListingDetails, NotPublished, Results, StorefrontIntro } from './catalog-view'
+import { DemoStorefront } from './demo-storefront'
 
 /**
  * Витрина, и она же главная страница.
@@ -42,9 +42,10 @@ export default async function StorefrontPage({
 }: {
   searchParams: Promise<Search>
 }) {
-  // В демо базы нет: говорим об этом прямо и не читаем фильтры из адреса —
-  // в наборе файлов без сервера их всё равно неоткуда взять
-  if (!isAvailable()) return <DemoWithoutDatabase />
+  // В демо базы нет, и карточки там показываются выдуманные — те же, которыми
+  // засевается база для разработки. Отбор в демо идёт в браузере: страница
+  // собрана заранее, и сервер, который мог бы отобрать, там отсутствует
+  if (!isAvailable()) return <DemoStorefront page={await storefront({ limit: 100 })} />
 
   const params = await searchParams
 
@@ -81,17 +82,7 @@ export default async function StorefrontPage({
 
   return (
     <>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-page font-extrabold">Найти услугу</h1>
-        <p className="max-w-[70ch] text-body text-ink-2">
-          Готовые услуги с ценой от проверенных подрядчиков. Выбираете сами —
-          сделку ведём мы.
-        </p>
-      </header>
-
-      {/* Обещание гаранта стоит там, где человек выбирает, а не там, где уже
-          заплатил: это то, чем площадка отличается от доски объявлений (§1) */}
-      <GuaranteeBand />
+      <StorefrontIntro />
 
       <Filters
         categories={page.categories}
@@ -100,18 +91,7 @@ export default async function StorefrontPage({
         maxPriceKopecks={page.priceCeilingKopecks}
       />
 
-      {page.items.length === 0 ? (
-        <NothingFound hasFilters={hasFilters} />
-      ) : (
-        <>
-          <p className="text-caption text-ink-3">
-            {page.total === page.items.length
-              ? `Нашлось: ${page.total}`
-              : `Показаны ${page.items.length} из ${page.total}`}
-          </p>
-          <Grid items={page.items} />
-        </>
-      )}
+      <Results items={page.items} total={page.total} hasFilters={hasFilters} />
     </>
   )
 }
