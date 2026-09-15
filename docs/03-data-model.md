@@ -213,6 +213,42 @@ create index on platform.outbox (type, occurred_at);
 уходят прямо из обработчика запроса. Это то же правило, что и в журнале
 доставки писем.
 
+## schema `admin`
+
+```sql
+-- Кто, что и когда изменил. На этой таблице держится доверие к площадке:
+-- однажды придётся ответить, почему у клиента изменилась ставка и кто снял
+-- его карточку. Ответ «система так решила» стоит клиента.
+--
+-- Запись идёт В ТОЙ ЖЕ ТРАНЗАКЦИИ, что и само изменение, иначе журнал врёт
+-- при откате. Правки и удаления записи нет ни в интерфейсе, ни в модуле.
+create table admin.audit_log (
+  id           uuid primary key,
+  -- Снимок, а не ссылка на platform.users: человека переименуют и уволят,
+  -- а журнал обязан читаться через год. Ссылок между схемами и не бывает
+  actor_id     uuid not null,
+  actor_name   text not null,
+  actor_role   text not null,
+  action       text not null,        -- 'contractor.verified', 'org.blocked'
+  entity       text not null,        -- 'catalog.contractor', 'platform.org'
+  entity_id    uuid not null,
+  entity_label text,                 -- как человек это называл: «Кофейня на Тверской»
+  before       jsonb,                -- null = создано
+  after        jsonb,                -- null = удалено
+  reason       text,                 -- для блокировки обязательна
+  created_at   timestamptz not null default now()
+);
+create index on admin.audit_log (created_at desc);
+create index on admin.audit_log (entity, entity_id, created_at desc);
+create index on admin.audit_log (actor_id, created_at desc);
+```
+
+Значения в `before` и `after` пишутся **названиями, а не идентификаторами**:
+журнал читают через полгода, и «категории: 3» на вопрос «что изменилось»
+не отвечает, а список UUID не отвечает тем более.
+
+---
+
 ## schema `catalog`
 
 ```sql

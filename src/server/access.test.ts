@@ -75,6 +75,7 @@ describe('права оператора', () => {
       ['server/storefront-queries.ts', 'server/storefront-queries.demo.ts'],
       ['server/company-queries.ts', 'server/company-queries.demo.ts'],
       ['server/company-actions.ts', 'server/company-actions.demo.ts'],
+      ['server/admin-queries.ts', 'server/admin-queries.demo.ts'],
     ]
 
     for (const [real, demo] of pairs as Array<[string, string]>) {
@@ -111,6 +112,43 @@ describe('права оператора', () => {
 
     const missing = stubs.filter((name) => !config.includes(name))
     expect(missing, 'заглушка есть, а в next.config.ts её нет').toEqual([])
+  })
+
+  /**
+   * Критерий приёмки задачи 03-1: оператор не открывает ни один экран
+   * администратора. Проверяется не меню, а сам экран: меню решает, что
+   * показать, а не что можно, и оператор может набрать адрес руками.
+   */
+  it('каждый экран администратора проверяет права до чтения данных', () => {
+    const dir = join(ROOT, 'app/admin')
+    const pages = readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => join('app/admin', entry.name, 'page.tsx'))
+
+    expect(pages.length, 'экраны администратора не найдены — тест смотрит не туда').toBeGreaterThan(0)
+
+    const unguarded = pages.filter((page) => !read(page).includes('requireAdmin()'))
+    expect(unguarded, 'экран администратора без проверки прав').toEqual([])
+  })
+
+  /**
+   * `requireAdmin` требует РОВНО роль администратора, а не «не ниже».
+   * У ролей есть старшинство, и `hasRole(user, 'operator')` пропустил бы сюда
+   * и оператора тоже — а ему здесь делать нечего.
+   */
+  it('права администратора — это именно admin, а не «оператор и выше»', () => {
+    const code = read('server/admin-queries.ts')
+    expect(code).toContain("user.role !== 'admin'")
+    expect(code, 'проверка через hasRole пропустила бы оператора').not.toContain('hasRole')
+  })
+
+  /**
+   * Журнал, который можно поправить, не журнал. Команд правки нет в самом
+   * модуле — значит и слою команд формы вызывать нечего.
+   */
+  it('журнал изменений нельзя ни исправить, ни удалить', () => {
+    const code = read('modules/admin/index.ts')
+    expect(code).not.toMatch(/export const (update|edit|delete|remove|clear)\w*Change/u)
   })
 
   it('заглушка прав для демо никого не пускает', () => {
