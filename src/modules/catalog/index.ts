@@ -39,6 +39,8 @@ export const getCategoryByCode = service.getCategoryByCode
 export const listZones = zones.listZones
 export const findZone = zones.findZone
 export const isKnownZone = zones.isKnownZone
+/** Город покрывает свои округа: работающий по всей Москве находится и по «ЦАО». */
+export const coveringCodes = zones.coveringCodes
 
 // ─── Подрядчики ─────────────────────────────────────────────────────────
 
