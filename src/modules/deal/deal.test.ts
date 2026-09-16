@@ -361,6 +361,46 @@ describe('кто какие сделки видит (§8)', () => {
     expect((await rejection(deal.getDeal(actor, missing))).code).toBe('deal_not_found')
   })
 
+  /**
+   * Подрядчик — вторая сторона сделки, и права у него свои: он должен
+   * видеть свой заказ и вести его, но только свой.
+   */
+  it('подрядчик видит свой заказ и может его вести', async () => {
+    const { actor, site } = await makeClient()
+    const { listing, orgId } = await makeListing()
+    const made = await deal.createFromListing({ actor, listingId: listing.id, siteId: site.id })
+
+    // Человек из организации подрядчика
+    const contractorUser = {
+      id: '01a00000-0000-7000-8000-0000000000cc',
+      orgId,
+      role: 'owner' as const,
+      fullName: 'Борис Орлов',
+    }
+
+    expect((await deal.getDeal(contractorUser, made.id)).id).toBe(made.id)
+
+    await deal.moveTo({ actor, dealId: made.id, to: 'accepted' })
+    await deal.moveTo({ actor, dealId: made.id, to: 'paid' })
+
+    const started = await deal.moveTo({ actor: contractorUser, dealId: made.id, to: 'in_progress' })
+    expect(started.status).toBe('in_progress')
+  })
+
+  /**
+   * Идентификатор подрядчика приходит из браузера. Подставив чужой, клиент
+   * увидел бы чужие сделки вместе с суммами.
+   */
+  it('чужой идентификатор подрядчика в списке не проходит', async () => {
+    const { actor, site } = await makeClient()
+    const { listing, contractor } = await makeListing()
+    await deal.createFromListing({ actor, listingId: listing.id, siteId: site.id })
+
+    expect(
+      (await rejection(deal.listDeals(actor, { contractorId: contractor.id }))).code,
+    ).toBe('forbidden')
+  })
+
   it('оператор видит все сделки', async () => {
     const { actor, site } = await makeClient()
     const { listing } = await makeListing()

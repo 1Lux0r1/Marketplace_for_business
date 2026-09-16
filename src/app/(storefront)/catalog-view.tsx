@@ -9,6 +9,7 @@ import {
   Rating,
   VerifiedMark,
 } from '@/ui'
+import { OrderButton, type Site } from './order-button'
 import { formatKopecks } from '@/shared/money'
 import type { StorefrontCard } from '@/server/storefront-queries'
 
@@ -203,7 +204,7 @@ export function NotPublished() {
   )
 }
 
-export function ListingDetails({ item }: { item: StorefrontCard }) {
+export function ListingDetails({ item, sites }: { item: StorefrontCard; sites: Site[] }) {
   return (
     <div className="flex flex-col gap-7">
       <Link
@@ -266,12 +267,8 @@ export function ListingDetails({ item }: { item: StorefrontCard }) {
             </p>
           )}
 
-          <Button size="lg" block disabled>
-            Заказать
-          </Button>
-          <p className="text-caption text-ink-3">
-            Заказ из каталога появится в четвёртом спринте — сейчас кнопка неактивна.
-          </p>
+          {/* Заказ — в отдельном файле: логика и оформление разведены (§12) */}
+          <OrderButton listingId={item.id} unit={item.unit} minQty={item.minQty} sites={sites} />
 
           <div className="border-t border-line pt-3">
             <GuaranteeLine />

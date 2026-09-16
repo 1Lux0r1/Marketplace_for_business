@@ -62,7 +62,7 @@ const client: Section[] = [
 const contractor: Section[] = [
   { href: '/services', label: 'Мои услуги', icon: 'tag', group: 'contractor' },
   { href: '/offers', label: 'Новые предложения', icon: 'inbox', group: 'contractor' },
-  { href: '/works', label: 'Мои работы', icon: 'tool', group: 'contractor' },
+  { href: '/works', label: 'Мои работы', icon: 'tool', group: 'contractor', ready: true },
   { href: '/acts', label: 'Закрыть акт', icon: 'checkDoc', group: 'contractor' },
   { href: '/payouts', label: 'Выплаты', icon: 'wallet', group: 'contractor' },
 ]

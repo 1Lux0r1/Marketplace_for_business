@@ -109,7 +109,7 @@ export async function moveTo(input: {
 
     const current = toDeal(row)
     const operator = platform.hasRole(input.actor, 'operator')
-    assertParty(current, input.actor, operator)
+    await assertParty(current, input.actor, operator)
 
     const check = canMove({
       from: current.status,
@@ -170,7 +170,7 @@ export async function getDeal(
   if (!row) throw errors.dealNotFound()
 
   const found = toDeal(row)
-  assertParty(found, actor, platform.hasRole(actor, 'operator'))
+  await assertParty(found, actor, platform.hasRole(actor, 'operator'))
   return found
 }
 
@@ -184,6 +184,13 @@ export async function listDeals(
     filter = { ...filter, clientOrgId: actor.orgId }
   }
   if (!staff && filter.clientOrgId && filter.clientOrgId !== actor.orgId) throw errors.forbidden()
+
+  // Идентификатор подрядчика приходит из браузера, и подставить чужой
+  // нельзя: сверяем, что этот подрядчик — организация того, кто спрашивает
+  if (!staff && filter.contractorId) {
+    const contractor = await catalog.getContractor(filter.contractorId).catch(() => null)
+    if (!contractor || contractor.orgId !== actor.orgId) throw errors.forbidden()
+  }
 
   const db = getDb()
   const limit = Math.min(Math.max(filter.limit ?? 50, 1), MAX_LIMIT)
@@ -246,16 +253,26 @@ export async function canPayOut(dealId: string): Promise<boolean> {
 
 // ─── Внутреннее ─────────────────────────────────────────────────────────
 
-/** Сделку видят её стороны и сотрудники площадки — больше никто. */
-function assertParty(
+/**
+ * Сделку видят её стороны и сотрудники площадки — больше никто.
+ *
+ * Стороны две, и обе равноправны: клиент по своей организации, подрядчик —
+ * по своей. Организация подрядчика спрашивается у каталога его функцией,
+ * а не соединением таблиц: `contractors` принадлежит ему (§4.2).
+ */
+async function assertParty(
   deal: Deal,
   actor: Pick<platform.User, 'orgId' | 'role'>,
   operator: boolean,
-): void {
+): Promise<void> {
   if (operator) return
   if (deal.clientOrgId === actor.orgId) return
-  // Подрядчик смотрит по своей организации: `contractorId` принадлежит
-  // каталогу, и сверять его здесь значило бы лезть в чужую схему
+
+  if (deal.contractorId) {
+    const contractor = await catalog.getContractor(deal.contractorId).catch(() => null)
+    if (contractor && contractor.orgId === actor.orgId) return
+  }
+
   throw errors.forbidden()
 }
 

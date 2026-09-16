@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { EmptyState, PageBody, PageHeader, StatusBadge, TableFrame, Td, Th } from '@/ui'
 import type { RequestRow, RequestsPage } from '@/server/request-queries'
+import type { DealRow, DealsPage } from '@/server/deal-queries'
+import { DealActions } from './deal-actions-buttons'
 import type { Category } from '@/modules/catalog'
 import { RequestForm } from './request-form'
 
@@ -23,14 +25,17 @@ import { RequestForm } from './request-form'
  */
 export function MyOrders({
   page,
+  deals,
   sites,
   categories,
 }: {
   page: RequestsPage
+  deals: DealsPage
   sites: Array<{ id: string; label: string; hint: string }>
   categories: Category[]
 }) {
   const [writing, setWriting] = useState(false)
+  const nothingYet = page.items.length === 0 && deals.items.length === 0
 
   return (
     <>
@@ -53,7 +58,7 @@ export function MyOrders({
       <PageBody>
         {sites.length === 0 ? (
           <NoSites />
-        ) : page.items.length === 0 ? (
+        ) : nothingYet ? (
           <EmptyState
             title="Заказов пока нет"
             description="Выберите услугу в каталоге — или, если подходящей нет, опишите задачу своими словами. Мы найдём подрядчиков, они ответят ценой и сроком, а вы выберете."
@@ -68,22 +73,42 @@ export function MyOrders({
             }
           />
         ) : (
-          <TableFrame>
-            <thead>
-              <tr>
-                <Th numeric>№</Th>
-                <Th>Что нужно</Th>
-                <Th>Куда</Th>
-                <Th>Когда</Th>
-                <Th>Что с ней</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {page.items.map((row) => (
-                <Row key={row.id} row={row} />
-              ))}
-            </tbody>
-          </TableFrame>
+          <>
+            {deals.items.length > 0 && (
+              <section className="flex flex-col gap-3">
+                <h2 className="text-section font-extrabold">Заказы из каталога</h2>
+                <div className="flex flex-col gap-3">
+                  {deals.items.map((row) => (
+                    <DealCardRow key={row.id} row={row} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {page.items.length > 0 && (
+              <section className="flex flex-col gap-3">
+                {deals.items.length > 0 && (
+                  <h2 className="text-section font-extrabold">Задачи своими словами</h2>
+                )}
+                <TableFrame>
+                  <thead>
+                    <tr>
+                      <Th numeric>№</Th>
+                      <Th>Что нужно</Th>
+                      <Th>Куда</Th>
+                      <Th>Когда</Th>
+                      <Th>Что с ней</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.items.map((row) => (
+                      <Row key={row.id} row={row} />
+                    ))}
+                  </tbody>
+                </TableFrame>
+              </section>
+            )}
+          </>
         )}
 
         {writing && (
@@ -175,4 +200,48 @@ export function moscow(when: Date): string {
     month: '2-digit',
     year: 'numeric',
   })
+}
+
+/**
+ * Заказ карточкой, а не строкой таблицы, и это не украшение.
+ *
+ * У заказа есть то, чего нет у задачи: деньги и следующий шаг. Обещание
+ * площадки — «ваши деньги лежат у нас до приёмки» — человек должен видеть
+ * в своём заказе, а не в справке (§1). В строку таблицы это не помещается.
+ */
+function DealCardRow({ row }: { row: DealRow }) {
+  return (
+    <article className="flex flex-col gap-3 rounded-card border border-line bg-surface p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="num text-caption font-bold text-ink-3">№{row.number}</span>
+            <h3 className="text-lead font-bold text-ink">{row.title}</h3>
+          </div>
+          <div className="text-caption text-ink-3">
+            {[row.contractorName, row.address].filter(Boolean).join(' · ')}
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          {row.price && <span className="num text-section font-extrabold text-ink">{row.price}</span>}
+          <StatusBadge
+            tone={
+              row.statusKind === 'done' ? 'ok' : row.statusKind === 'stop' ? 'err' : 'warn'
+            }
+          >
+            {row.status}
+          </StatusBadge>
+        </div>
+      </div>
+
+      {/* То, за что берётся комиссия, — прямо в заказе */}
+      {row.money && (
+        <p className="rounded-control bg-surface-2 px-3 py-2 text-caption text-ink-2">
+          {row.money}
+        </p>
+      )}
+
+      <DealActions row={row} />
+    </article>
+  )
 }
