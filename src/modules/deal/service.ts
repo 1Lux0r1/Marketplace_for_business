@@ -150,9 +150,17 @@ export async function moveTo(input: {
   })
 }
 
+/**
+ * Какие переходы кому-то интересны снаружи.
+ *
+ * `deal.accepted` — по нему выпускаются договор и счёт, `deal.act_issued` —
+ * акт. Сам модуль про документы не знает и знать не должен (§4.5): он
+ * публикует, что произошло, а кто на это подписан — не его дело.
+ */
 const EVENT_FOR: Partial<Record<DealStatus, string>> = {
   accepted: 'deal.accepted',
   paid: 'deal.paid',
+  act_issued: 'deal.act_issued',
   completed: 'deal.completed',
   disputed: 'deal.disputed',
   cancelled: 'deal.cancelled',

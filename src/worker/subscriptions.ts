@@ -1,5 +1,7 @@
 import { childLogger } from '@/shared/logger'
 import * as catalog from '@/modules/catalog'
+import * as deal from '@/modules/deal'
+import * as documents from '@/modules/documents'
 import * as platform from '@/modules/platform'
 import { lookupInn, namesMatch } from '@/shared/inn-directory'
 import { on } from './registry'
@@ -68,4 +70,117 @@ export function registerSubscriptions(): void {
       verified ? 'ИНН подтверждён' : 'ИНН не подтверждён — заявка оператору',
     )
   })
+
+  /**
+   * Договор и счёт выпускаются, когда сделка принята.
+   *
+   * Здесь, а не внутри `deal`: модуль сделки не должен знать про документы
+   * (§4.5), иначе он потянет за собой ещё и шаблоны с нумерацией. Он говорит
+   * «сделка принята», а кто на это подписан — не его дело.
+   *
+   * Идемпотентность (§5): событие может прийти дважды, а два счёта с разными
+   * номерами на одну сделку — это уже вопрос от бухгалтера. Поэтому сначала
+   * смотрим, не выпущены ли документы по этой сделке.
+   */
+  on('deal.accepted', async (event) => {
+    const dealId = String(event.payload.dealId)
+    const already = await documents.listForDeal(dealId)
+    if (already.some((doc) => doc.kind === 'invoice')) {
+      log.info({ eventId: event.id, dealId }, 'счёт по сделке уже выпущен, пропускаем')
+      return
+    }
+
+    const made = await deal.getDeal(OPERATOR, dealId)
+    await issueFor(made, ['contract', 'invoice'])
+    log.info({ eventId: event.id, dealId }, 'выпущены договор и счёт')
+  })
+
+  /**
+   * Акт выпускается, когда подрядчик сказал, что работа готова.
+   *
+   * ПОДПИСАННЫЙ акт — условие выплаты (§8), и этот обработчик выпускает
+   * только сам акт. Подписывает его клиент, и отметку ставит либо система
+   * по ответу оператора ЭДО, либо наш сотрудник, сверив скан.
+   */
+  on('deal.act_issued', async (event) => {
+    const dealId = String(event.payload.dealId)
+    const already = await documents.listForDeal(dealId)
+    if (already.some((doc) => doc.kind === 'act' && doc.status !== 'void')) {
+      log.info({ eventId: event.id, dealId }, 'акт по сделке уже выпущен, пропускаем')
+      return
+    }
+
+    const made = await deal.getDeal(OPERATOR, dealId)
+    await issueFor(made, ['act'])
+    log.info({ eventId: event.id, dealId }, 'выпущен акт')
+  })
+}
+
+/**
+ * Воркер работает не от чьего-то имени: он система. Права у него как
+ * у оператора — иначе он не прочитает сделку, чтобы выпустить по ней счёт.
+ */
+const OPERATOR = {
+  id: '00000000-0000-0000-0000-000000000000',
+  orgId: '00000000-0000-0000-0000-000000000000',
+  role: 'operator' as const,
+}
+
+/**
+ * Выпустить документы по сделке.
+ *
+ * Позиция одна — то, что заказали. Когда в сделке появятся несколько услуг,
+ * их станет несколько, а документ от этого не изменится: он уже собирается
+ * из списка.
+ */
+async function issueFor(made: deal.Deal, kinds: documents.DocumentKind[]): Promise<void> {
+  const price = made.priceKopecks ?? 0n
+  const contractorName = made.contractorId
+    ? await contractorNameOf(made.contractorId)
+    : undefined
+
+  for (const kind of kinds) {
+    await documents.issue({
+      kind,
+      dealId: made.id,
+      dealNumber: made.number,
+      clientOrgId: made.clientOrgId,
+      contractorId: made.contractorId ?? undefined,
+      contractorName,
+      /**
+       * ДОПУЩЕНИЕ НА ПИЛОТ (Q25). Оператор ЭДО не выбран, проверять
+       * квалифицированную подпись нечем. Но и бумажный путь целиком
+       * оставить нельзя: на нём акт отмечает оператор, сверив скан,
+       * а загрузки сканов пока тоже нет — клиент не смог бы принять
+       * работу вообще.
+       *
+       * Поэтому путь электронный, а в самой подписи записано, чем она
+       * подтверждена: сейчас это нажатие в системе, то есть простая
+       * подпись, а не усиленная квалифицированная. Врать в документе
+       * «подписано УКЭП» нельзя, и код этого не делает.
+       */
+      signingPath: 'electronic',
+      items: [
+        {
+          title: made.title ?? `Заказ № ${made.number}`,
+          qty: made.qty ?? '1',
+          unit: made.unit ?? 'услуга',
+          priceKopecks: price,
+          totalKopecks: price,
+        },
+      ],
+    })
+  }
+}
+
+async function contractorNameOf(contractorId: string): Promise<string | undefined> {
+  try {
+    const contractor = await catalog.getContractor(contractorId)
+    const org = await platform.getOrg(contractor.orgId)
+    return org.name
+  } catch {
+    // Название подрядчика — подпись в документе, а не его основа:
+    // без него документ выпустить можно, без счёта — нельзя
+    return undefined
+  }
 }

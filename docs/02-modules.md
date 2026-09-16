@@ -9,7 +9,7 @@
 | `intake` | Приём заявки: форма; дальше Telegram и нормализация | `intake` | platform, catalog |
 | `matching` | Кандидаты, рассылка предложений, отклики, рекомендации по каталогу | `matching` | catalog, ai |
 | `deal` | Сделка: статусы, цена, сроки, переписка, приёмка | `deal` | platform, catalog |
-| `documents` | Договор, счёт, акт: шаблоны, PDF, нумерация, два пути подписания | `documents` | deal |
+| `documents` | Договор, счёт, акт: шаблоны, нумерация, два пути подписания | `documents` | platform |
 | `payments` | Вебхуки, три схемы удержания, движок ставок, выплаты | `payments` | deal |
 | `notifications` | Почта, Telegram, шаблоны, ретраи | `notifications` | слушает события |
 | `analytics` | Журнал событий, метрики, когорты | `analytics` | слушает события |

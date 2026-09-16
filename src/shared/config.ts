@@ -50,6 +50,22 @@ const schema = z.object({
   INN_LOOKUP_TOKEN: z.string().optional(),
   INN_LOOKUP_TIMEOUT_MS: z.coerce.number().int().positive().default(3000),
 
+  /**
+   * Реквизиты площадки для договора, счёта и акта.
+   *
+   * Значений по умолчанию нет намеренно: документ с выдуманным ИНН хуже,
+   * чем отсутствие документа (§9.7). Пока их не заполнили, счета и акты
+   * не выпускаются, и модуль говорит об этом прямо.
+   */
+  PLATFORM_LEGAL_NAME: z.string().optional(),
+  PLATFORM_INN: z.string().optional(),
+  PLATFORM_KPP: z.string().optional(),
+  PLATFORM_ADDRESS: z.string().optional(),
+  PLATFORM_BANK_NAME: z.string().optional(),
+  PLATFORM_BANK_BIC: z.string().optional(),
+  PLATFORM_BANK_ACCOUNT: z.string().optional(),
+  PLATFORM_BANK_CORR_ACCOUNT: z.string().optional(),
+
   COMMISSION_RATE_SERVICES: z.coerce.number().gt(0).lt(1).default(0.13),
   COMMISSION_RATE_GOODS: z.coerce.number().gt(0).lt(1).default(0.07),
 })

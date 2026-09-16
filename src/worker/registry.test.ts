@@ -89,3 +89,30 @@ describe('раздача событий', () => {
     expect(subscribedTypes()).toEqual(['deal.accepted', 'payment.received'])
   })
 })
+
+describe('подписки действительно зарегистрированы', () => {
+  /**
+   * Обработчик, вложенный внутрь другого обработчика, — валидный код,
+   * который просто никогда не срабатывает: он регистрируется только когда
+   * сработает внешний. Я так и ошибся, собирая выпуск документов, и ни типы,
+   * ни линтер этого не увидели.
+   *
+   * Поэтому проверяем не «есть ли файл», а что после регистрации система
+   * действительно слушает те события, ради которых он написан.
+   */
+  it('слушает все события, на которых держится работа площадки', async () => {
+    const { registerSubscriptions } = await import('./subscriptions')
+    resetRegistry()
+    registerSubscriptions()
+
+    const listening = subscribedTypes()
+    for (const type of [
+      'user.registered',
+      'contractor.registered',
+      'deal.accepted',
+      'deal.act_issued',
+    ]) {
+      expect(listening, `никто не слушает «${type}»`).toContain(type)
+    }
+  })
+})
