@@ -61,7 +61,8 @@ function Filtered({ page }: { page: StorefrontPage }) {
     return (
       <>
         <DemoDataNotice />
-        <ListingDetails item={card} />
+        {/* В демо ни входа, ни точек: заказывать не с чего и некому */}
+        <ListingDetails item={card} sites={[]} />
       </>
     )
   }

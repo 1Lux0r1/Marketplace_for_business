@@ -2,6 +2,8 @@ import { isAvailable, storefront, storefrontCard } from '@/server/storefront-que
 import { CatalogError } from '@/modules/catalog'
 import { Filters } from './filters'
 import { ListingDetails, NotPublished, Results, StorefrontIntro } from './catalog-view'
+import { siteChoices } from '@/server/deal-queries'
+import { requireUser } from '@/server/session'
 import { DemoStorefront } from './demo-storefront'
 
 /**
@@ -51,7 +53,13 @@ export default async function StorefrontPage({
 
   if (params.id) {
     const card = await storefrontCard(params.id)
-    return card ? <ListingDetails item={card} /> : <NotPublished />
+    // Точки клиента нужны форме заказа. Берём их здесь, а не запросом
+    // из браузера: роут не собирается в набор файлов без сервера, и демо
+    // на GitHub Pages сломалось бы на нём сразу
+    const access = await requireUser()
+    const sites = access.allowed ? await siteChoices(access.user) : []
+
+    return card ? <ListingDetails item={card} sites={sites} /> : <NotPublished />
   }
 
   const hasFilters = Boolean(params.category ?? params.zone ?? params.q ?? params.priceTo)

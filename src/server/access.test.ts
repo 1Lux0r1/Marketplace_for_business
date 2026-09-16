@@ -78,11 +78,43 @@ describe('права оператора', () => {
       ['server/admin-queries.ts', 'server/admin-queries.demo.ts'],
       ['server/request-queries.ts', 'server/request-queries.demo.ts'],
       ['server/request-actions.ts', 'server/request-actions.demo.ts'],
+      ['server/deal-queries.ts', 'server/deal-queries.demo.ts'],
+      ['server/deal-actions.ts', 'server/deal-actions.demo.ts'],
     ]
 
     for (const [real, demo] of pairs as Array<[string, string]>) {
       expect(exportedNames(read(real)).filter((n) => !exportedNames(read(demo)).includes(n)), `${demo} не отдаёт всё, что ${real}`).toEqual([])
     }
+  })
+
+  /**
+   * Команды сделки трогают деньги, поэтому проверка обязательна вдвойне:
+   * команда без неё выполнилась бы от имени никого, а модуль решает,
+   * кто сторона сделки, по человеку.
+   */
+  it('каждая команда сделки спрашивает, кто пришёл', () => {
+    const code = read('server/deal-actions.ts')
+    const unguarded: string[] = []
+
+    for (const match of code.matchAll(/export async function (\w+Action)\b/gu)) {
+      const rest = code.slice((match.index as number) + 1)
+      const end = rest.search(/\nexport /u)
+      const body = end === -1 ? rest : rest.slice(0, end)
+      if (!body.includes('requireUser()')) unguarded.push(match[1] as string)
+    }
+
+    expect(unguarded, 'команда сделки без requireUser()').toEqual([])
+  })
+
+  /**
+   * Правило «можно ли платить подрядчику» живёт в одном месте (§8).
+   * Слой команд формы не вправе его повторять: два места — два ответа.
+   */
+  it('слой команд не проверяет статусы сделки сам', () => {
+    const code = read('server/deal-actions.ts')
+    expect(code, 'проверка перехода дублируется вне модуля').not.toMatch(
+      /'(completed|act_signed|disputed)'\s*[=!]==/u,
+    )
   })
 
   it('каждая команда кабинета спрашивает, кто пришёл', () => {
