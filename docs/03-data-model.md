@@ -470,6 +470,61 @@ create index on deal.deal_events (deal_id, id);
 
 ---
 
+## schema `documents`
+
+```sql
+-- Счётчик номеров. ОТДЕЛЬНАЯ ТАБЛИЦА, А НЕ ПОСЛЕДОВАТЕЛЬНОСТЬ.
+-- §8 требует нумерацию «без пропусков и дублей»; последовательность даёт
+-- только уникальность: откат номер не возвращает, и появляется дырка,
+-- которую придётся объяснять бухгалтеру
+create table documents.counters (
+  kind text not null check (kind in ('contract','invoice','act')),
+  year int not null,
+  next int not null default 1
+);
+create unique index on documents.counters (kind, year);
+
+-- Номер берётся из строки под блокировкой в ТОЙ ЖЕ транзакции, что и документ:
+-- откат возвращает и номер. Цена — выдача документов одного вида идёт
+-- по одному. При наших объёмах незаметно; при тысячах в минуту придётся
+-- выбирать между непрерывностью и скоростью
+
+create table documents.documents (
+  id            uuid primary key,
+  number        text not null,             -- «СЧ-2026-000123», его называют вслух
+  kind          text not null check (kind in ('contract','invoice','act')),
+  deal_id       uuid not null,             -- deal.deals, без FK
+  client_org_id uuid not null,             -- platform.orgs, без FK
+  contractor_id uuid,                      -- catalog.contractors, без FK
+  status        text not null default 'issued'
+                check (status in ('issued','signed','void')),
+  signing_path  text not null check (signing_path in ('electronic','paper')),
+  amount_kopecks bigint check (amount_kopecks is null or amount_kopecks >= 0),
+  -- СНИМОК всего, из чего документ собран, и его готовый вид. Не ссылки:
+  -- компанию переименуют, цену изменят, а подписанное остаётся подписанным
+  data          jsonb not null,
+  html          text not null,
+  issued_at     timestamptz not null default now(),
+  signed_at     timestamptz,
+  signed_by     uuid,                      -- на бумажном пути это всегда оператор
+  signature     jsonb,                     -- чем подтверждена подпись
+  voided_at     timestamptz,
+  void_reason   text
+);
+create unique index on documents.documents (number);
+create index on documents.documents (deal_id, issued_at);
+create index on documents.documents (client_org_id, issued_at desc);
+```
+
+**Команды правки выданного документа нет и не будет.** Ошиблись —
+аннулирование и новый документ с новым номером. Исправление задним числом —
+это то, за что отзывают лицензии.
+
+**Реквизиты площадки приходят из настроек** (`PLATFORM_*`) и не имеют значений
+по умолчанию: счёт с выдуманным ИНН хуже, чем отсутствие счёта.
+
+---
+
 ## Демо-данные
 
 `pnpm db:seed` создаёт: 2 организации-клиента, 6 подрядчиков в 4 категориях

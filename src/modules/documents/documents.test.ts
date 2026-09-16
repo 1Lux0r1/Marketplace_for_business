@@ -218,6 +218,23 @@ describe('выпуск документа', () => {
     expect((await rejection(issueInvoice(orgId, { items: [] }))).code).toBe('bad_document')
   })
 
+  /** База отдаёт «1.000», а в документе пишут «1»: нули читаются как точность. */
+  it('количество пишет человеческим видом, без лишних нулей', async () => {
+    const orgId = await makeClient()
+    const doc = await issueInvoice(orgId, {
+      items: [
+        { ...item, qty: '1.000' },
+        { ...item, title: 'Второе', qty: '2.500' },
+        { ...item, title: 'Третье', qty: '3' },
+      ],
+    })
+
+    expect(doc.html).toContain('>1 объект<')
+    expect(doc.html).toContain('>2.5 объект<')
+    expect(doc.html).toContain('>3 объект<')
+    expect(doc.html).not.toContain('1.000')
+  })
+
   it('обещание площадки написано прямо в счёте', async () => {
     const orgId = await makeClient()
     const doc = await issueInvoice(orgId)

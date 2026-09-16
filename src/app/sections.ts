@@ -54,7 +54,7 @@ const client: Section[] = [
    * заказы из каталога.
    */
   { href: '/orders', label: 'Мои заказы', icon: 'bag', group: 'client', ready: true },
-  { href: '/documents', label: 'Документы и счета', icon: 'doc', group: 'client' },
+  { href: '/documents', label: 'Документы и счета', icon: 'doc', group: 'client', ready: true },
   { href: '/company', label: 'Компания', icon: 'building', group: 'client', ready: true },
 ]
 

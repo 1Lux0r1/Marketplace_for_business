@@ -187,7 +187,7 @@ function items(d: DocumentData): string {
       (item) => `
     <tr>
       <td>${esc(item.title)}</td>
-      <td class="num">${esc(item.qty)} ${esc(item.unit)}</td>
+      <td class="num">${esc(qty(item.qty))} ${esc(item.unit)}</td>
       <td class="num">${formatKopecks(item.priceKopecks)}</td>
       <td class="num">${formatKopecks(item.totalKopecks)}</td>
     </tr>`,
@@ -213,10 +213,14 @@ function items(d: DocumentData): string {
  */
 function signatures(d: DocumentData): string {
   if (d.signingPath === 'electronic') {
+    // Пока нет оператора ЭДО, подпись в системе простая, а не усиленная
+    // квалифицированная (Q24, Q25). Написать в документе «УКЭП» значило бы
+    // соврать в том самом месте, которое читают при споре
     return `
 <p class="note">
-  Документ подписывается усиленной квалифицированной электронной подписью
-  в системе. Подписанный экземпляр имеет ту же силу, что и бумажный.
+  Документ подписывается электронной подписью в системе: сторона входит
+  под своей учётной записью и подтверждает подписание. Стороны признают
+  такое подписание равным собственноручному.
 </p>`
   }
 
@@ -280,6 +284,17 @@ function esc(value: string): string {
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
+}
+
+/**
+ * Количество человеческим видом. База отдаёт `numeric` как «1.000»,
+ * а в документе пишут «1»: лишние нули читаются как точность,
+ * которой в заказе не было.
+ */
+function qty(value: string): string {
+  if (!/^\d+\.\d+$/u.test(value)) return value
+  const trimmed = value.replace(/0+$/u, '').replace(/\.$/u, '')
+  return trimmed === '' ? '0' : trimmed
 }
 
 function moscowDate(when: Date): string {

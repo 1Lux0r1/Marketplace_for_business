@@ -80,6 +80,7 @@ describe('права оператора', () => {
       ['server/request-actions.ts', 'server/request-actions.demo.ts'],
       ['server/deal-queries.ts', 'server/deal-queries.demo.ts'],
       ['server/deal-actions.ts', 'server/deal-actions.demo.ts'],
+      ['server/document-queries.ts', 'server/document-queries.demo.ts'],
     ]
 
     for (const [real, demo] of pairs as Array<[string, string]>) {

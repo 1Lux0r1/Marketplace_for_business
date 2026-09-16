@@ -8,6 +8,7 @@ export type DealEventType =
   | 'deal.created'
   | 'deal.accepted'
   | 'deal.paid'
+  | 'deal.act_issued'
   | 'deal.completed'
   | 'deal.disputed'
   | 'deal.cancelled'
